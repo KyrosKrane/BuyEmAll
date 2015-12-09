@@ -72,18 +72,21 @@ if not CogsBagSpace or CogsBagSpace.revision < revision then
 			local which, doBag = "freeSpace", true
 			
 			if theBag > 0 then -- 0 is always the backpack
-				local bagSubType = select(7, GetItemInfo(
-					GetInventoryItemLink("player", theBag + 19) -- Bag #1 is in inventory slot 20
-				))
-				if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
-				   bagSubType == "Quiver" and itemSubType == "Arrow" then
-					which = "specialSpace"
-				elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
-					   bagSubType == "Quiver" and itemSubType ~= "Arrow" or
-					   bagSubType == "Herb Bag"
-							and not self:IsSpecialBagItem("herb",itemID) or
-					   bagSubType == "Enchanting Bag"
-							and not self:IsSpecialBagItem("enchanting",itemID) then
+				local bagLink = GetInventoryItemLink("player", 19 + theBag) -- Bag #1 is in inventory slot 20
+				if bagLink then
+					local bagSubType = select(7, GetItemInfo(bagLink))
+					if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
+					   bagSubType == "Quiver" and itemSubType == "Arrow" then
+						which = "specialSpace"
+					elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
+						   bagSubType == "Quiver" and itemSubType ~= "Arrow" or
+						   bagSubType == "Herb Bag"
+								and not self:IsSpecialBagItem("herb",itemID) or
+						   bagSubType == "Enchanting Bag"
+								and not self:IsSpecialBagItem("enchanting",itemID) then
+						doBag = false
+					end
+				else
 					doBag = false
 				end
 			end

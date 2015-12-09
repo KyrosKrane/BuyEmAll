@@ -32,8 +32,6 @@ function BuyEmAll:OnLoad()
 	MerchantFrame:SetScript("OnHide", function(...)
 		return self:MerchantFrame_OnHide(...)
 	end)
-	
-    DEFAULT_CHAT_FRAME:AddMessage "BuyEmAll - By Cogwheel"
 end
 
 
@@ -195,37 +193,24 @@ end
 Changes the money display to however much amount of the item will cost. If
 amount is not specified, it uses the current split value.
 ]]
-function BuyEmAll:UpdateDisplay(amount)
-	
-	local purchase = ceil((amount and amount or self.split) / self.preset)
+function BuyEmAll:UpdateDisplay()
+	local purchase = ceil(self.split / self.preset)
 	local cost = purchase * self.price
 	MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
+	BuyEmAllText:SetText(self.split)
 	
-	--[[ Amount is only used for previewing when hovering over the buttons.
-	the folowing code will only execute when the purchase amount is actually
-	changed. ]]
-	if not amount and not self.isUpdating then
-		self.isUpdating = true
-		--[[ This wrapper is kind of a hack... Calling :Enable() or :Disable() on
-		the	Stack button triggers certain events which call UpdateDisplay causing a
-		stack overflow, hence the isUpdating flag]]
-		
-		BuyEmAllText:SetText(self.split)
-		BuyEmAllLeftButton:Enable()
-		BuyEmAllRightButton:Enable()
-		if self.split == self.max then
-			BuyEmAllRightButton:Disable()
-		elseif self.split <= self.preset then
-			BuyEmAllLeftButton:Disable()
-		end
-		
-		self:SetStackClick()
-		BuyEmAllStackButton:Enable()
-		if self.max < self.stackClick then
-			BuyEmAllStackButton:Disable()
-		end
-		
-		self.isUpdating = nil
+	BuyEmAllLeftButton:Enable()
+	BuyEmAllRightButton:Enable()
+	if self.split == self.max then
+		BuyEmAllRightButton:Disable()
+	elseif self.split <= self.preset then
+		BuyEmAllLeftButton:Disable()
+	end
+	
+	self:SetStackClick()
+	BuyEmAllStackButton:Enable()
+	if self.max < self.stackClick then
+		BuyEmAllStackButton:Disable()
 	end
 end
 
@@ -423,8 +408,6 @@ function BuyEmAll:OnEnter()
 	end
         
 	self:CreateTooltip(lines)
-	
-    self:UpdateDisplay(lines.amount)
 end
 
 
@@ -446,6 +429,8 @@ function BuyEmAll:CreateTooltip(lines)
 		end
 	end
 	
+	SetTooltipMoney(GameTooltip, ceil(lines.amount / self.preset) * self.price)
+	
     GameTooltip:Show()
 end
 
@@ -456,8 +441,8 @@ end
 Hides the tooltip
 ]]
 function BuyEmAll:OnLeave()
-    self:UpdateDisplay()
     GameTooltip:Hide()
+	GameTooltip_ClearMoney()
 end
 
 
