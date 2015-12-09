@@ -149,13 +149,6 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 			return
 		end
 		
-		-- Bypass for items with extended cost
-		if select(7,GetMerchantItemInfo(self.itemIndex)) == 1 then
-			self.ConfirmNoItemID = self.itemIndex
-			local dialog = StaticPopup_Show("BUYEMALL_CONFIRM2", quantity, self.itemName)
-			return
-		end
-		
 		self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"))
 		local bagMax, stack = self:CogsFreeBagSpace(self.itemID)
 		self.stack = stack
@@ -420,21 +413,7 @@ Decreases the amount by however much is necessary to go down to the next
 lowest multiple of the preset stack size.
 ]]
 function BuyEmAll:Left_Click()
---[[
-	if self.split <= self.preset then
-		return
-	end
-	
-	local decrease = self.split % self.preset
-	decrease = decrease == 0 and self.preset or decrease
-
-	self.split = self.split - decrease
-
-	self:UpdateDisplay()
-	]]
-	
 	self.split = self.split - 1
-	
 	self:UpdateDisplay()
 end
 
@@ -444,18 +423,7 @@ Increases the amount by however much is necessary to go up to the next highest
 multiple of the preset stack size.
 ]]
 function BuyEmAll:Right_Click()
---[[	local increase = self.preset - (self.split % self.preset)
-
-	if self.split + increase > self.max then
-		return
-	end
-	
-	self.split = self.split + increase
-	
-	self:UpdateDisplay()
-]]
 	self.split = self.split + 1
-	
 	self:UpdateDisplay()
 end
 
