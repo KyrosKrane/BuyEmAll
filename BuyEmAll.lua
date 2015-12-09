@@ -20,7 +20,7 @@ function BuyEmAll:OnLoad()
 		timeout = 0,
 		hideOnEscape = true,
 	}
-	
+	if BEAConfirmToggle == nil then BEAConfirmToggle = 1 end
 	self.OrigMerchantItemButton_OnModifiedClick = MerchantItemButton_OnModifiedClick
 	MerchantItemButton_OnModifiedClick = function(...)
 		self:MerchantItemButton_OnModifiedClick(this, ...)
@@ -32,6 +32,20 @@ function BuyEmAll:OnLoad()
 	end)
 end
 
+SLASH_BUYEMALL1 = "/buyemall"
+SlashCmdList["BUYEMALL"] = function(message, editbox) BuyEmAll:SlashHandler(message, editbox) end
+function BuyEmAll:SlashHandler(message, editbox)
+	if message == "toggleconfirm" then
+		if BEAConfirmToggle == 1 then
+			BEAConfirmToggle = 0
+			print("BuyEmAll: Large purchase confirm window disabled.")
+		else
+			BEAConfirmToggle = 1
+			print("BuyEmAll: Large purchase confirm window enabled.")
+		end
+	elseif message ~= "toggleconfirm" then return
+	end
+end
 
 function BuyEmAll:MoneyFrame_OnLoad(frame)
 	-- Set up money frame
@@ -59,10 +73,11 @@ end
 Hooks left-clicks on merchant item buttons
 ]]
 function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
-	if MerchantFrame.selectedTab == 1 
+	if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()))
+	elseif MerchantFrame.selectedTab == 1
 	   and IsShiftKeyDown()
 	   and not IsControlKeyDown()
-	   and not (ChatFrame1EditBox:IsVisible() and button == "LeftButton") then
+	   and not ChatFrame1EditBox:HasFocus() then
 	   
 		-- Set up various data before showing the BuyEmAll frame
 		self.itemIndex = frame:GetID()
@@ -135,7 +150,11 @@ function BuyEmAll:VerifyPurchase(amount)
 	if (amount > 0) then
 		amount = ceil(amount/self.preset) * self.preset
 		if amount > self.stack and amount > self.defaultStack then
-			self:DoConfirmation(amount)
+			if BEAConfirmToggle == 1 then
+				self:DoConfirmation(amount)
+			else
+				self:DoPurchase(amount)
+			end
 		else
 			self:DoPurchase(amount)
 		end
@@ -214,12 +233,12 @@ function BuyEmAll:SetStackClick()
 end
 
 function BuyEmAll:SetDeStackClick()
-	local BEATesting = tonumber(BuyEmAllText:GetText())
-	if BEATesting <= self.stack then
+	local decrease = tonumber(BuyEmAllText:GetText())
+	if decrease <= self.stack then
 		self.split = self.preset
 		self:UpdateDisplay()
 	else
-		self.split = BEATesting - self.stack
+		self.split = decrease - self.stack
 		self:UpdateDisplay()
 	end
 end
