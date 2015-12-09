@@ -157,7 +157,14 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		BuyEmAllCurrency2:SetTexture("Interface\\MONEYFRAME\\UI-SilverIcon"); -- Once known it's a standard transation, use regular money textures
 		BuyEmAllCurrency3:SetTexture("Interface\\MONEYFRAME\\UI-CopperIcon");
 
-		self.afford = floor(GetMoney() / ceil(price / self.preset));
+		
+		-- Modified to check for free items. Mostly for the PTR/Beta servers, but it shouldn't hurt to leave it in.
+		if self.price == 0 then
+			self.afford = self.fit;
+		else
+			self.afford = floor(GetMoney() / ceil(price / self.preset));
+		end
+		
 		self.max = min(self.fit, self.afford);
 		if numAvailable > -1 then
 			self.max = min(self.max, numAvailable);

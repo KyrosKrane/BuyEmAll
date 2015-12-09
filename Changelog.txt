@@ -1,4 +1,7 @@
-﻿v3.1.8
+﻿v3.2.0
+Haven't found any problems, so just TOC update.
+
+v3.1.8
 TOC bump, added new currency.
 
 v3.1.7
