@@ -20,7 +20,7 @@ function BuyEmAll:OnLoad()
 		OnAccept = function(dialog) self:DoPurchase(dialog.data) end,
 		timeout = 0,
 		hideOnEscape = true,
-	}
+	};
 	self.ConfirmNoItemID = 0;
 	StaticPopupDialogs["BUYEMALL_CONFIRM2"] = {
 		preferredIndex = 3,
@@ -30,11 +30,7 @@ function BuyEmAll:OnLoad()
 		OnAccept = function(dialog) BuyMerchantItem(self.ConfirmNoItemID) end,
 		timeout = 0,
 		hideOnEscape = true,
-	}
-	if (BEAConfirmToggle == nil) then
-		BEAConfirmToggle = 1;
-	end
-	
+	};	
 	-- Clear textures and text to prevent pink textures.
 	
 	BuyEmAllCurrency1:SetTexture();
@@ -51,27 +47,48 @@ function BuyEmAll:OnLoad()
 	
 	self.OrigMerchantFrame_OnHide = MerchantFrame:GetScript("OnHide");
 	MerchantFrame:SetScript("OnHide", function(...)
-		return self:MerchantFrame_OnHide(...)
+		return self:MerchantFrame_OnHide(...);
 	end)
+	
+	SLASH_BUYEMALL1 = "/buyemall"
+	SlashCmdList["BUYEMALL"] = function(message, editbox)
+		BuyEmAll:SlashHandler(message);
+	end
 end
 
 
-SLASH_BUYEMALL1 = "/buyemall"
-SlashCmdList["BUYEMALL"] = function(message, editbox) BuyEmAll:SlashHandler(message, editbox) end
 function BuyEmAll:SlashHandler(message, editbox)
 	if message == "" then
 		print("BuyEmAll: Use /buyemall confirm to enable/disable the large purchange confirm.");
 	elseif message == "confirm" then
-		if BEAConfirmToggle == 1 then
-			BEAConfirmToggle = 0;
+		if BEAConfirmToggle == true then
+			BEAConfirmToggle = false;
 			print("BuyEmAll: Large purchase confirm window disabled.");
-		elseif BEAConfirmToggle == 0 then
-			BEAConfirmToggle = 1;
+		elseif BEAConfirmToggle == false then
+			BEAConfirmToggle = true;
 			print("BuyEmAll: Large purchase confirm window enabled.");
 		end
 	end
 end
 
+-- Variable setup/check.
+
+local BEAframe = CreateFrame("FRAME", "BEAFrame");
+BEAframe:Hide();
+BEAframe:RegisterEvent("ADDON_LOADED");
+local function eventHandler(self, event, ...)
+	local arg1, arg2, arg3, arg4, arg5 = ...;
+	if (event == "ADDON_LOADED") and (arg1 == "BuyEmAll") then
+		if (BEAConfirmToggle == nil) then
+			BEAConfirmToggle = true;
+		elseif (BEAConfirmToggle == 0) then
+			BEAConfirmToggle = false;
+		elseif (BEAConfirmToggle == 1) then
+			BEAConfirmToggle = true;
+		end
+	end
+end
+BEAframe:SetScript("OnEvent", eventHandler);
 
 --[[
 Makes sure the BuyEmAll frame goes away when you leave a vendor
@@ -128,15 +145,16 @@ Hooks left-clicks on merchant item buttons
 ]]
 function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 	self.itemIndex = frame:GetID();
-	if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()));
-	elseif MerchantFrame.selectedTab == 1
+	-- Don't think this is needed anymore.
+	--if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()));
+	if MerchantFrame.selectedTab == 1
 		and IsShiftKeyDown()
 			and not IsControlKeyDown()
 				and not ChatFrame1EditBox:HasFocus() then
 
 		-- Set up various data before showing the BuyEmAll frame
 		
-		self.AltCurrencyMode = 0;
+		self.AltCurrencyMode = false;
 
 		local name, texture, price, quantity, numAvailable = 
 			GetMerchantItemInfo(self.itemIndex);
@@ -157,7 +175,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		self.stack = stack;
 		self.fit = bagMax;
 
-		if select(7,GetMerchantItemInfo(self.itemIndex)) == 1 then
+		if select(7,GetMerchantItemInfo(self.itemIndex)) == true then
 			self:AltCurrencyHandling(self.itemIndex, frame);
 			return
 		end
@@ -182,7 +200,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		if self.max == 0 then
 			return
 		elseif self.max == 1 then
-			MerchantItemButton_OnClick("LeftButton", 1);
+			MerchantItemButton_OnClick(frame, "LeftButton");
 			return
 		end
 		
@@ -203,7 +221,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 end
 
 function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
-	self.AltCurrencyMode = 1;
+	self.AltCurrencyMode = true;
 
 	local price1, price2, price3 = 0, 0, 0;
 	self.price1, self.price2, self.price3 = 0, 0, 0;
@@ -276,7 +294,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
 	if self.max == 0 then
 		return
 	elseif self.max == 1 then
-		MerchantItemButton_OnClick("LeftButton", 1);
+		MerchantItemButton_OnClick(frame, "LeftButton");
 		return
 	end
 	
@@ -332,6 +350,10 @@ function BuyEmAll:AltCurrencyTranslating(Texture)
 		return 777;
 	elseif (strmatch(Texture, "%a+-%a+$") == "timelesscoin-bloody") then
 		return 789;
+	elseif (strmatch(Texture, "%a+_%a+$") == "apexis_draenor") then
+		return 823;
+	elseif (strmatch(Texture, "%a+_%a+$") == "garrison_resource") then
+		return 824;
 	end
 end
 
@@ -339,7 +361,7 @@ end
 Prepare the various UI elements of the BuyEmAll frame and show it
 ]]
 function BuyEmAll:Show(frame)
-	self.typing = 0;
+	self.typing = false;
 	BuyEmAllLeftButton:Disable();
 	BuyEmAllRightButton:Enable();
  
@@ -365,7 +387,7 @@ function BuyEmAll:VerifyPurchase(amount)
 	if (amount > 0) then
 		amount = (amount / self.preset) * self.preset;	
 		if amount > self.stack and amount > self.defaultStack then
-			if BEAConfirmToggle == 1 then
+			if BEAConfirmToggle == true then
 				self:DoConfirmation(amount);
 			else
 				self:DoPurchase(amount);
@@ -414,7 +436,7 @@ amount is not specified, it uses the current split value.
 ]]
 function BuyEmAll:UpdateDisplay()
 	local purchase = self.split;
-	if (self.AltCurrencyMode == 0) then
+	if (self.AltCurrencyMode == false) then
 		local cost = 0;
 		if self.defaultStack > 1 then
 			cost = purchase * (self.price / self.defaultStack);
@@ -429,7 +451,7 @@ function BuyEmAll:UpdateDisplay()
 		BuyEmAllCurrencyAmt1:SetText(gold);
 		BuyEmAllCurrencyAmt2:SetText(silver);
 		BuyEmAllCurrencyAmt3:SetText(copper);
-	elseif (self.AltCurrencyMode == 1) then
+	elseif (self.AltCurrencyMode == true) then
 		if ((purchase % self.preset) ~= 0) then
 			if ((purchase % self.preset) <= (self.preset / 2)) then
 				if ((purchase - (purchase % self.preset)) == 0) then
@@ -465,9 +487,9 @@ function BuyEmAll:UpdateDisplay()
 	if (self.split == self.max) then
 		BuyEmAllRightButton:Disable();
 		BuyEmAllMaxButton:Disable();
-	elseif (self.AltCurrencyMode == 0) and (self.split == 1) then
+	elseif (self.AltCurrencyMode == false) and (self.split == 1) then
 		BuyEmAllLeftButton:Disable();
-	elseif (self.AltCurrencyMode == 1) and (self.split == self.preset) then
+	elseif (self.AltCurrencyMode == true) and (self.split == self.preset) then
 		BuyEmAllLeftButton:Disable();
 	end
 	
@@ -521,14 +543,14 @@ function BuyEmAll:OnClick(frame,button)
 		if button == "LeftButton" then
 			self.split = self.stackClick;
 			self:UpdateDisplay();
-			if frame:IsEnabled() == 1 then
+			if frame:IsEnabled() == true then
 				self:OnEnter(frame);
 			else
 				GameTooltip:Hide();
 			end
 		elseif button == "RightButton" then
 			self:DeStackClick();
-			if frame:IsEnabled() == 1 then
+			if frame:IsEnabled() == true then
 				self:OnEnter(frame);
 			else
 				GameTooltip:Hide();
@@ -550,8 +572,8 @@ function BuyEmAll:OnChar(text)
 		return
 	end
 
-	if self.typing == 0 then
-		self.typing = 1;
+	if self.typing == false then
+		self.typing = true;
 		self.split = 0;
 	end
 
@@ -579,14 +601,14 @@ Key handler for keys other than 0-9
 ]]
 function BuyEmAll:OnKeyDown(key)
 	if key == "BACKSPACE" or key == "DELETE" then
-		if self.typing == 0 or self.split == 1 then
+		if self.typing == false or self.split == 1 then
 			return
 		end
 
 		self.split = floor(self.split / 10);
 		if self.split <= 1 then
 			self.split = 1;
-			self.typing = 0;
+			self.typing = false;
 		end
 		
 		self:UpdateDisplay();
@@ -609,7 +631,7 @@ Decreases the amount by however much is necessary to go down to the next
 lowest multiple of the preset stack size.
 ]]
 function BuyEmAll:Left_Click()
-	if (self.AltCurrencyMode == 0) then
+	if (self.AltCurrencyMode == false) then
 		self.split = self.split - 1;
 		self:UpdateDisplay();
 	else
@@ -624,7 +646,7 @@ Increases the amount by however much is necessary to go up to the next highest
 multiple of the preset stack size.
 ]]
 function BuyEmAll:Right_Click()
-	if (self.AltCurrencyMode == 0) then
+	if (self.AltCurrencyMode == false) then
 		self.split = self.split + 1;
 		self:UpdateDisplay();
 	else
