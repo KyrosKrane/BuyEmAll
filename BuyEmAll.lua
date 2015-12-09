@@ -319,6 +319,8 @@ function BuyEmAll:OnKeyDown(key)
 		BuyEmAll:Left_Click()
 	elseif key == "RIGHT" or key == "UP" then
 		BuyEmAll:Right_Click()
+	elseif key == "PRINTSCREEN" then
+		Screenshot()
 	end
 end
 
