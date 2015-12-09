@@ -1,7 +1,7 @@
 ## Author: Shinisuryu
 ## Interface: 30300
 ## Notes: Enhances shift-click interface at vendors.
-## Title: BuyEmAll (2.8.8)
+## Title: BuyEmAll (2.8.9)
 CogsBagSpace.lua
 Localization.enUS.lua
 Localization.deDE.lua

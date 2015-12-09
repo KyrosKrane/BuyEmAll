@@ -68,7 +68,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 	if MerchantFrame.selectedTab == 1 
 	   and IsShiftKeyDown()
 	   and not IsControlKeyDown()
-	   and not (ChatFrameEditBox:IsVisible() and button == "LeftButton") then
+	   and not (ChatFrame1EditBox:IsVisible() and button == "LeftButton") then
 	   
 		-- Set up various data before showing the BuyEmAll frame
 		self.itemIndex = frame:GetID()

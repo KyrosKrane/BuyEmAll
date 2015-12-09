@@ -28,7 +28,7 @@ function CogsFreeBagSpace(itemID)
 				doBag = false
 			end
 		end
-			
+		
 		if doBag then
 			local numSlot = GetContainerNumSlots(theBag)
 			for theSlot = 1, numSlot do
@@ -37,8 +37,7 @@ function CogsFreeBagSpace(itemID)
 					returns[which] = returns[which] + stackSize
 				elseif strfind(itemLink, "item:"..itemID..":") then
 					local _,itemCount = GetContainerItemInfo(theBag, theSlot)
-					returns[which] =
-						returns[which] + stackSize - itemCount
+					returns[which] = returns[which] + stackSize - itemCount
 				end
 			end
 		end
