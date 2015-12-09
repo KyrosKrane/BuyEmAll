@@ -1,8 +1,7 @@
-## Interface: 20003
+## Interface: 30000
 ## Title: BuyEmAll
 ## Author: Cogwheel
-## Url: http://cogwheel.wowinterface.com
-## eMail: mcogwheel@gmail.com
+## Url: http://cogwheel.info
 ## Notes: Enhances shift-click interface at vendors
 ## OptionalDeps: CogsBagSpace
 
