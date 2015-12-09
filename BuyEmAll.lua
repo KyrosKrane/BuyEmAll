@@ -85,7 +85,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(button, ...)
         self.available = numAvailable
         
         local bagMax, specialMax, stack =
-            self:FreeBagSpace(GetMerchantItemLink(self.itemIndex))
+            CogsBagSpace:FreeBagSpace(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
         self.stack = stack
         self.fit = floor(bagMax / quantity) * quantity + specialMax
         self.afford = floor(GetMoney() / price) * quantity
@@ -469,101 +469,4 @@ response.
 ]]
 function BuyEmAll:OnHide()
     StaticPopup_Hide("BUYEMALL_CONFIRM")
-end
-
-
-
-
---[[
-Herb & Enchanting item lists from Periodic Table
-]]
-BuyEmAll.specialBagItems = {
-    herb = "3358 8839 13466 4625 13467 3821 785 13465 13468 2450 2452 3818 3355 3357 8838 3369 3820 8153 8836 13463 8845 8846 13464 2447 2449 765 2453 3819 3356 8831",
-    enchanting = "11083 16204 11137 11176 10940 11174 10938 11135 11175 16202 11134 16203 10998 11082 10939 11084 14343 11139 10978 11177 14344 11138 11178",
-}
-
-
-
-
---[[
-Determine whether an item is an herb or enchanting material
-]]
-function BuyEmAll:IsSpecialBagItem(bagType, itemID)
-    for curID in string.gmatch(self.specialBagItems[bagType], "%d+") do
-        if itemID == curID then return true end
-    end
-    return false
-end
-
-
-
-
---[[
-Adapted from example on WoWWiki.com
-]]
-local OldGetItemInfo = GetItemInfo
-local function GetItemInfo(itemLink)
-    local itemID
-    if type(itemLink) == "string" then
-        _,_, itemID = string.find(itemLink, "item:(%d-):")
-    end
-    if itemID then
-        return OldGetItemInfo(itemID)
-    end
-end --]]
-
-
-
-
---[[
-Determines the amount of an item you can fit in your bags.
-Parameters:
-    itemLink - the item link string for the item
-Returns:
-    freeSpace - Amount of the item you can fit in your bags (not including your
-        quiver or ammo pouch)
-    specialSpace - Amount of the item you can fit in your quiver or ammo pouch
-    stackSize - Amount of the item in a full stack
-]]
-function BuyEmAll:FreeBagSpace(itemLink)
-    local returns = { freeSpace = 0, specialSpace = 0 }
-    local name,_,_,_,_,_,itemSubType, stackSize = GetItemInfo(itemLink)
-    local itemID = strfind(itemLink, "item:(%d-):")
-    
-    for theBag = 0,4 do
-        local which, doBag = "freeSpace", true
-        
-        if theBag > 0 then -- 0 is always the backpack
-            local _,_,_,_,_,_,bagSubType = GetItemInfo(
-                GetInventoryItemLink("player", theBag + 19) -- Bag #1 is in inventory slot 20
-            )
-            if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
-               bagSubType == "Quiver" and itemSubType == "Arrow" then
-                which = "specialSpace"
-            elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
-                   bagSubType == "Quiver" and itemSubType ~= "Arrow" or
-                   bagSubType == "Herb Bag"
-                        and not self:IsSpecialBagItem("herb",itemID) or
-                   bagSubType == "Enchanting Bag"
-                        and not self:IsSpecialBagItem("enchanting",itemID) then
-                doBag = false
-            end
-        end
-            
-        if doBag then
-            local numSlot = GetContainerNumSlots(theBag)
-            for theSlot = 1, numSlot do
-                local itemLink = GetContainerItemLink(theBag, theSlot)
-                if not itemLink then
-                    returns[which] = returns[which] + stackSize
-                elseif string.find(itemLink, "%["..name.."%]") then
-                    local _,itemCount = GetContainerItemInfo(theBag, theSlot)
-                    returns[which] =
-                        returns[which] + stackSize - itemCount
-                end
-            end
-        end
-    end
-    
-    return returns.freeSpace, returns.specialSpace, stackSize
 end
