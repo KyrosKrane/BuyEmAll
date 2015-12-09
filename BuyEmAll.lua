@@ -1,191 +1,475 @@
--- BuyEmAll - By Cogwheel v1.12.1 - See readme.txt
+-- BuyEmAll - By Cogwheel. Inspired by Tanao of Llane
 
---[[Hook BuyMerchantItem for debugging purposes
-function BuyMerchantItem(button, amount)
-    if not amount then amount = 1 end
-    print("Buying "..amount.." items.")
-end --]]
+-- Instantiate BuyEmAll
+BuyEmAll = AceLibrary("AceAddon-2.0"):new(
+    "AceHook-2.0"--, 
+    --"AceConsole-2.0"
+)
 
--- Herb & Enchanting item lists courtesy of Periodic Table by Tekkub
-BuyEmAll_SpecialItems = {
-    Herb = "3358 8839 13466 4625 13467 3821 785 13465 13468 2450 2452 3818 3355 3357 8838 3369 3820 8153 8836 13463 8845 8846 13464 2447 2449 765 2453 3819 3356 8831",
-    Enchant = "11083 16204 11137 11176 10940 11174 10938 11135 11175 16202 11134 16203 10998 11082 10939 11084 14343 11139 10978 11177 14344 11138 11178",
-}
+-- Localize
+local L = AceLibrary("AceLocale-2.0"):new("BuyEmAll")
+
+-- These are used for the text on the Max and Stack buttons. See BuyEmAll.xml.
+BUYEMALL_MAX = L"Max"
+BUYEMALL_STACK = L"Stack"
 
 
 
 
-function BuyEmAllFrame_OnLoad()
+--[[
+It's ALIVE!!! Muahahahahhahahaa!!!!!!
+]]
+function BuyEmAll:OnEnable()
     -- Set up confirmation dialog
-	StaticPopupDialogs["BUYEMALL_CONFIRM"] = {
-		text = BUYEMALL_CONFIRMATION,
-		button1 = TEXT(YES),
-		button2 = TEXT(NO),
-		OnAccept = BuyEmAll_OnAccept,
-		timeout = 0,
-		hideOnEscape = true,
-	}
+    StaticPopupDialogs["BUYEMALL_CONFIRM"] = {
+        text = L"Are you sure you want to buy\n %d × %s?",
+        button1 = YES,
+        button2 = NO,
+        OnAccept = function(amount) self:DoPurchase(amount) end,
+        timeout = 0,
+        hideOnEscape = true,
+    }
     
-    BuyEmAllStackButton.defaultText = BUYEMALL_STACK
-    BuyEmAllMaxButton.defaultText = BUYEMALL_MAX
+    -- Hook clicking on merchant item buttons
+    self:Hook("MerchantItemButton_OnClick")
+    self:HookScript(MerchantFrame, "OnHide", "MerchantFrame_OnHide")
     
-
-    -- Replace the SplitStack callback and  for each merchant item button
-	for i=1,12 do
-        local button=getglobal("MerchantItem"..i.."ItemButton")
-		button.SplitStack = BuyEmAll_SplitStack
-        button:SetScript("OnHide", function()
-            if ( this.hasBuyEmAll == 1 ) then
-				BuyEmAllFrame:Hide();
-			end
-        end)
-	end
+    DEFAULT_CHAT_FRAME:AddMessage("BuyEmAll - By Cogwheel\nInspired by Tanao of Llane")
 end
 
 
 
 
-function BuyEmAllCostMoney_OnLoad()
+function BuyEmAll:MoneyFrame_OnLoad()
+    -- Set up money frame
     MoneyTypeInfo["BUYEMALL"] = {
-        UpdateFunc = function() return this.staticMoney end,
+        UpdateFunc = function() return 0 end, -- Stub to satisfy MoneyFrame_SetType
         showSmallerCoins = "Backpack",
         fixedWidth = 1,
-        collapse = 0,
-        truncateSmallCoins = nil
+        collapse = 1,
     }
-    this.small = 1
-    this.staticMoney = 0
+    BuyEmAllMoneyFrame.small = 1
     MoneyFrame_SetType("BUYEMALL")
 end
 
 
 
 
---[[ Since I have to control two different paths through this function, I just
-     recreated it here to make life a bit easier. ]]
-function MerchantItemButton_OnClick(button, ignoreModifiers)
-	if ( MerchantFrame.selectedTab == 1 ) then
-		-- Is merchant frame
-		if ( button == "LeftButton" ) then
-			if ( IsControlKeyDown() and not ignoreModifiers ) then
-				DressUpItemLink(GetMerchantItemLink(this:GetID()));
-			elseif ( IsShiftKeyDown() and not ignoreModifiers ) then
-				if ( ChatFrameEditBox:IsVisible() ) then
-					ChatFrameEditBox:Insert(GetMerchantItemLink(this:GetID()));
-				else
-                    BuyEmAll_ChooseAmount()
-				end
-			else
-				PickupMerchantItem(this:GetID());
-			end
-		else
-			if ( IsControlKeyDown() and not ignoreModifiers ) then
-				return;
-			elseif ( IsShiftKeyDown() and not ignoreModifiers ) then
-                BuyEmAll_ChooseAmount()
-			else
-				BuyMerchantItem(this:GetID());
-			end
-		end
-	else
-		-- Is buyback item
-		BuybackItem(this:GetID());
-	end
+--[[
+Makes sure the BuyEmAll frame goes away when you leave a vendor
+]]
+function BuyEmAll:MerchantFrame_OnHide(...)
+    BuyEmAllFrame:Hide()
+    return self.hooks[MerchantFrame]["OnHide"].orig(unpack(arg))
 end
 
 
 
 
--- Courtesy of wowwiki.com
-function GetItemInfoFromItemLink(link)
-    local itemId = nil;
-    if ( type(link) == "string" ) then
-        _,_, itemId = string.find(link, "item:(%d+):");
-    end
-    if ( itemId ) then
-        return itemId, GetItemInfo(itemId);
-    end
-end
+--[[
+Hooks left-clicks on merchant item buttons
+]]
+function BuyEmAll:MerchantItemButton_OnClick(button, ignoreModifiers)
+    if MerchantFrame.selectedTab == 1 
+       and IsShiftKeyDown()
+       and not IsControlKeyDown()
+       and not ignoreModifiers
+       and not (ChatFrameEditBox:IsVisible() and button == "LeftButton") then
+        -- Set up various data before showing the BuyEmAll frame
+        self.itemIndex = this:GetID()
 
-
-
-
--- Figures out maximum purchase amount and shows the BuyEmAllFrame
-function BuyEmAll_ChooseAmount()
-    local name, _, price, quantity, numAvailable = GetMerchantItemInfo(this:GetID());
-    this.presetStack = quantity
-    this.price = price
-    this.itemName = name
-    this.itemID, _,_,_,_,_, this.itemSubType, this.stackSize = 
-        GetItemInfoFromItemLink(GetMerchantItemLink(this:GetID()))
-    
-    local bagSpace, specialSpace = BuyEmAll_FreeSpace(name, itemID)
-    local specialMax = floor(specialSpace / quantity) * quantity
-    this.bagMax = floor(bagSpace / quantity) * quantity + specialMax
-    this.moneyMax = floor(GetMoney() / price) * quantity
-    this.available = numAvailable
-    local maxPurchase = min(this.bagMax, this.moneyMax)
-    if numAvailable ~= -1 then maxPurchase = min(maxPurchase, numAvailable * quantity) end
-    this.defaultStack = specialMax > 0 and specialMax <= maxPurchase and specialMax or quantity
-    
-    if not name or maxPurchase == 0 then
-        return
-    elseif maxPurchase == 1 then
-        MerchantItemButton_OnClick("LeftButton", 1)
-        return
-    end
-    
-    OpenBuyEmAllFrame(maxPurchase, "BOTTOMLEFT", "TOPLEFT")
-end
-
-
-
-
---  Determines free bag space.
-function BuyEmAll_FreeSpace(name, itemID)
-    local returns = { freeSpace = 0, specialSpace = 0}
-    
-	for theBag = 0,4 do
-        local which = "freeSpace"
-        local doBag = true
+        local name, texture, price, quantity, numAvailable = 
+            GetMerchantItemInfo(self.itemIndex)
+        self.preset = quantity
+        self.price = price
+        self.itemName = name
+        self.available = numAvailable
         
-        if theBag > 0 then
-            local _,_,_,_,_,_,bagSubType =
-                GetItemInfoFromItemLink(GetInventoryItemLink("player", theBag + 19)) -- Bag #1 is in inventory slot 20
-            if bagSubType == "Ammo Pouch" and this.itemSubType == "Bullet" or
-               bagSubType == "Quiver" and this.itemSubType == "Arrow" then
-                which = "specialSpace"
-            elseif bagSubType == "Ammo Pouch" and this.itemSubType ~= "Bullet" or
-                   bagSubType == "Quiver" and this.itemSubType ~= "Arrow" or
-                   bagSubType == "Herb Bag" and not BuyEmAll_IsSpecial("Herb") or
-                   bagSubType == "Enchanting Bag" and not BuyEmAll_IsSpecial("Enchant") then
-                doBag = false
-            end
+        local bagMax, specialMax, stack =
+            self:FreeBagSpace(GetMerchantItemLink(self.itemIndex))
+        self.stack = stack
+        self.fit = floor(bagMax / quantity) * quantity + specialMax
+        self.afford = floor(GetMoney() / price) * quantity
+        self.max = min(self.fit, self.afford)
+        if numAvailable > -1 then
+            self.max = min(self.max, numAvailable * quantity)
         end
-            
-		if doBag then
-            local numSlot = GetContainerNumSlots(theBag);
-            for theSlot = 1, numSlot do
-                local itemLink = GetContainerItemLink(theBag, theSlot);
-                if not itemLink then
-                    returns[which] = returns[which] + this.stackSize;
-                elseif string.find(itemLink, "%["..name.."%]") then
-                    local _,itemCount = GetContainerItemInfo(theBag, theSlot)
-                    returns[which] = returns[which] + this.stackSize - itemCount
-                end
-            end
+        if self.max == 0 or not name then
+            return
+        elseif self.max == 1 then
+            MerchantItemButton_OnClick("LeftButton", 1)
+            return
         end
-	end
-    return returns.freeSpace, returns.specialSpace
+        
+        specialMax = floor(specialMax / quantity) * quantity
+        self.defaultStack =
+            specialMax > 0 and specialMax <= self.max and specialMax or quantity
+        
+        self:Show()
+    else
+        self.hooks.MerchantItemButton_OnClick.orig(button, ignoreModifiers)
+    end
 end
 
 
 
 
--- Determine whether an item is an herb or enchanting material
-function BuyEmAll_IsSpecial(which)
-    for itemID in gfind(BuyEmAll_SpecialItems[which], "%d+") do
-        if tonumber(this.itemID) == tonumber(itemID) then return true end
+--[[
+Prepare the various UI elements of the BuyEmAll frame and show it
+]]
+function BuyEmAll:Show()
+    self.split = self.defaultStack
+	self.typing = 0
+	BuyEmAllText:SetText(self.defaultStack)
+	BuyEmAllLeftButton:Disable()
+	BuyEmAllRightButton:Enable()
+ 
+    BuyEmAllStackButton:Enable()
+    if self.max < self.stack or self.stack == 1 then
+        BuyEmAllStackButton:Disable()
+    end
+
+	BuyEmAllFrame:ClearAllPoints()
+	BuyEmAllFrame:SetPoint("BOTTOMLEFT", this, "TOPLEFT", 0, 0)
+	BuyEmAllFrame:Show()
+    
+    self:UpdateCost(self.split)
+end
+
+
+
+
+--[[
+If the amount is more than stack and defaultStack, show a confirmation.
+Otherwise, do the purchase
+]]
+function BuyEmAll:VerifyPurchase(amount)
+    amount = amount or self.split
+    if (amount > 0) then
+        amount = ceil(amount/self.preset) * self.preset
+        if amount > self.stack and amount > self.defaultStack then
+            self:DoConfirmation(amount)
+        else
+            self:DoPurchase(amount)
+        end
+    end
+end
+
+
+
+
+--[[
+Makes the actual purchase(s)
+amount must be a multiple of the preset stack size if preset stack size > 1
+]]
+function BuyEmAll:DoPurchase(amount)
+    BuyEmAllFrame:Hide()
+    
+    local numLoops, purchAmount, leftover
+    
+    if self.preset > 1 then
+        numLoops = amount/self.preset
+        purchAmount = 1
+        leftover = 0
+    else
+        numLoops = floor(amount/self.stack)
+        purchAmount = self.stack
+        leftover = mod(amount, self.stack)
+    end
+    
+    for i = 1, numLoops do
+        BuyMerchantItem(self.itemIndex, purchAmount)
+    end
+    
+    if leftover > 0 then BuyMerchantItem(self.itemIndex, leftover) end
+end
+
+
+
+
+
+--[[
+Changes the money display to however much amount of the item will cost. If
+amount is not specified, it uses the current split value.
+]]
+function BuyEmAll:UpdateCost(amount)
+    local purchase = ceil((amount and amount or self.split) / self.preset)
+    local cost = purchase * self.price
+    
+    MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
+end
+
+
+
+
+--[[
+Shows the confirmation dialog
+]]
+function BuyEmAll:DoConfirmation(amount)
+    local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, self.itemName)
+    dialog.data = amount
+end
+
+
+
+
+--[[
+OnClick handler for the four main buttons
+]]
+function BuyEmAll:OnClick()
+    if this == BuyEmAllOkayButton then
+        self:VerifyPurchase()
+    elseif this == BuyEmAllCancelButton then
+        BuyEmAllFrame:Hide()
+    elseif this == BuyEmAllStackButton then
+        self:DoConfirmation(self.stack)
+    elseif this == BuyEmAllMaxButton then
+        self:DoConfirmation(self.max)
+    end
+end
+
+
+
+
+--[[
+Allows you to type a number to buy. This is adapted directly from the Default
+UI's code.
+]]
+function BuyEmAll:OnChar()
+	if arg1 < "0" or arg1 > "9" then
+		return
+	end
+
+	if self.typing == 0 then
+		self.typing = 1
+		self.split = 0
+	end
+
+	local split = (self.split * 10) + arg1
+	if split == self.split then
+		if self.split == 0 then
+			self.split = 1
+		end
+        
+        self:UpdateCost()
+		return
+	end
+
+	if split <= self.max then
+		self.split = split
+		BuyEmAllText:SetText(split)
+		if split == self.max then
+			BuyEmAllRightButton:Disable()
+		else
+			BuyEmAllRightButton:Enable()
+		end
+		if split <= self.preset then
+			BuyEmAllLeftButton:Disable()
+		else
+			BuyEmAllLeftButton:Enable()
+		end
+	elseif split == 0 then
+		self.split = 1
+	end
+    self:UpdateCost()
+end
+
+
+
+
+--[[
+Key handler for keys other than 0-9
+]]
+function BuyEmAll:OnKeyDown()
+	if arg1 == "BACKSPACE" or arg1 == "DELETE" then
+		if self.typing == 0 or self.split == 1 then
+			return
+		end
+
+		self.split = floor(self.split / 10)
+		if self.split <= 1 then
+			self.split = 1
+			self.typing = 0
+        end
+        if self.split <= self.preset then
+			BuyEmAllLeftButton:Disable()
+		else
+			BuyEmAllLeftButton:Enable()
+		end
+		
+        BuyEmAllText:SetText(self.split)
+		if self.split == self.max then
+			BuyEmAllRightButton:Disable()
+		else
+			BuyEmAllRightButton:Enable()
+		end
+        
+        self:UpdateCost()
+	elseif arg1 == "ENTER" then
+		self:VerifyPurchase()
+	elseif arg1 == "ESCAPE" then
+		BuyEmAllFrame:Hide()
+	elseif arg1 == "LEFT" or arg1 == "DOWN" then
+		BuyEmAll:Left_Click()
+	elseif arg1 == "RIGHT" or arg1 == "UP" then
+		BuyEmAll:Right_Click()
+	end
+end
+
+
+
+
+--[[
+Decreases the amount by however much is necessary to go down to the next
+lowest multiple of the preset stack size.
+]]
+function BuyEmAll:Left_Click()
+	if self.split <= self.preset then
+		return
+	end
+    
+    local decrease = mod(self.split, self.preset)
+    decrease = decrease == 0 and self.preset or decrease
+
+	self.split = self.split - decrease
+
+	BuyEmAllText:SetText(self.split)
+	if self.split <= self.preset then
+		BuyEmAllLeftButton:Disable()
+	end
+	BuyEmAllRightButton:Enable()
+    
+    self:UpdateCost()
+end
+
+
+
+
+--[[
+Increases the amount by however much is necessary to go up to the next highest
+multiple of the preset stack size.
+]]
+function BuyEmAll:Right_Click()
+    local increase = self.preset - mod(self.split, self.preset)
+
+	if self.split + increase > self.max then
+		return
+	end
+    
+	self.split = self.split + increase
+    
+	BuyEmAllText:SetText(self.split)
+	if self.split == self.max then
+		BuyEmAllRightButton:Disable()
+	end
+	BuyEmAllLeftButton:Enable()
+    
+    self:UpdateCost()
+end
+
+
+
+
+--[[
+Shows tooltips when you hover over the Stack or Max buttons
+]]
+function BuyEmAll:OnEnter()
+    local cost, label, amount
+    local lines = {}
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
+    
+    if this == BuyEmAllStackButton then
+        cost = self.stack
+        label = L"Stack size"
+        amount = self.stack
+    else--if this == BuyEmAllMaxButton then   -- don't need to compare since it's the only other option
+        cost = self.max
+        label = L"Maximum purchase"
+        amount = self.max
+        lines = {{ L"You can fit", self.fit },
+                 { L"You can afford", self.afford }}
+        if self.available > 1 then
+            table.insert(lines, { L"Vendor has", self.available })
+        end
+    end
+    
+    GameTooltip:SetText(label..
+                        "|cFFFFFFFF - |r"..
+                        GREEN_FONT_COLOR_CODE..
+                        amount..
+                        "|r"
+    )
+    for _, line in lines do
+        self:AddTooltipLine(line)
+    end
+    GameTooltip:Show()
+    self:UpdateCost(cost)
+end
+
+
+
+
+--[[
+Adds a line to the tooltip. line[1] is the label and will be left-justified.
+line[2] is a number and will be right-justified. All the text will be white
+unless the number is equal to the maximum purchase, in which case the number
+will be green.
+]]
+function BuyEmAll:AddTooltipLine(line)
+    local color = 
+        line[2] == self.max and GREEN_FONT_COLOR or HIGHLIGHT_FONT_COLOR
+    GameTooltip:AddDoubleLine(line[1], line[2], 1,1,1, color.r,color.g,color.b)
+end
+
+
+
+
+--[[
+Hides the tooltip
+]]
+function BuyEmAll:OnLeave()
+    self:UpdateCost()
+    GameTooltip:Hide()
+end
+
+
+
+
+--[[
+When the BuyEmAll frame is closed, close any confirmations waiting for a
+response.
+]]
+function BuyEmAll:OnHide()
+    StaticPopup_Hide("BUYEMALL_CONFIRM")
+end
+
+
+
+
+--[[
+Utility functions. Thes could easily be used in other projects.
+]]
+
+
+
+
+--[[
+Herb & Enchanting item lists from Periodic Table
+]]
+BuyEmAll.specialBagItems = {
+    herb = "3358 8839 13466 4625 13467 3821 785 13465 13468 2450 2452 3818 3355 3357 8838 3369 3820 8153 8836 13463 8845 8846 13464 2447 2449 765 2453 3819 3356 8831",
+    enchanting = "11083 16204 11137 11176 10940 11174 10938 11135 11175 16202 11134 16203 10998 11082 10939 11084 14343 11139 10978 11177 14344 11138 11178",
+}
+
+
+
+
+--[[
+Determine whether an item is an herb or enchanting material
+]]
+function BuyEmAll:IsSpecialBagItem(bagType, itemID)
+    for curID in gfind(self.specialBagItems[bagType], "%d+") do
+        if itemID == curID then return true end
     end
     return false
 end
@@ -193,329 +477,71 @@ end
 
 
 
-function BuyEmAll_SplitStack(amount)
-    local button = BuyEmAllFrame.owner
-    if (amount > 0) then
-        amount = ceil(amount/button.presetStack) * button.presetStack
-        if amount > button.stackSize and amount > button.defaultStack then
-            local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, button.itemName)
-            dialog.data = amount
-        elseif button.presetStack > 1 then
-            BuyEmAll_OnAccept(amount)
-        else
-            BuyMerchantItem(button:GetID(), amount);
-            BuyEmAllFrame:Hide()
+--[[
+Adapted from example on WoWWiki.com
+]]
+function BuyEmAll:GetItemInfoFromLink(itemLink)
+    local itemID
+    if type(itemLink) == "string" then
+        _,_, itemID = string.find(itemLink, "item:(%d-):")
+    end
+    if itemID then
+        return itemID, GetItemInfo(itemID)
+    end
+end
+
+
+
+
+--[[
+Determines the amount of an item you can fit in your bags.
+Parameters:
+    itemLink - the item link string for the item
+Returns:
+    freeSpace - Amount of the item you can fit in your bags (not including your
+        quiver or ammo pouch)
+    specialSpace - Amount of the item you can fit in your quiver or ammo pouch
+    stackSize - Amount of the item in a full stack
+]]
+function BuyEmAll:FreeBagSpace(itemLink)
+    local returns = { freeSpace = 0, specialSpace = 0 }
+    local itemID,name,_,_,_,_,itemSubType, stackSize = 
+        self:GetItemInfoFromLink(itemLink)
+    
+    for theBag = 0,4 do
+        local which, doBag = "freeSpace", true
+        
+        if theBag > 0 then -- 0 is always the backpack
+            local _,_,_,_,_,_,bagSubType = self:GetItemInfoFromLink(
+                GetInventoryItemLink("player", theBag + 19) -- Bag #1 is in inventory slot 20
+            )
+            if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
+               bagSubType == "Quiver" and itemSubType == "Arrow" then
+                which = "specialSpace"
+            elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
+                   bagSubType == "Quiver" and itemSubType ~= "Arrow" or
+                   bagSubType == "Herb Bag"
+                        and not self:IsSpecialBagItem("herb") or
+                   bagSubType == "Enchanting Bag"
+                        and not self:IsSpecialBagItem("enchanting") then
+                doBag = false
+            end
+        end
+            
+        if doBag then
+            local numSlot = GetContainerNumSlots(theBag)
+            for theSlot = 1, numSlot do
+                local itemLink = GetContainerItemLink(theBag, theSlot)
+                if not itemLink then
+                    returns[which] = returns[which] + stackSize
+                elseif string.find(itemLink, "%["..name.."%]") then
+                    local _,itemCount = GetContainerItemInfo(theBag, theSlot)
+                    returns[which] =
+                        returns[which] + stackSize - itemCount
+                end
+            end
         end
     end
-end
-
-
-
-
-function BuyEmAll_OnAccept(amount)
-    BuyEmAllFrame:Hide()
     
-    local button = BuyEmAllFrame.owner
-    local numLoops, purchAmount, leftover
-    
-    if button.presetStack > 1 then
-        numLoops = amount/button.presetStack
-        purchAmount = 1
-        leftover = 0
-    else
-        numLoops = floor(amount/button.stackSize)
-        purchAmount = button.stackSize
-        leftover = mod(amount, button.stackSize)
-    end
-    
-    for i = 1, numLoops do
-        BuyMerchantItem(button:GetID(), purchAmount)
-    end
-    
-    if leftover > 0 then BuyMerchantItem(button:GetID(), leftover) end
-end
-
-
-
-
-local OldMerchantFrame_OnHide = MerchantFrame_OnHide
-function MerchantFrame_OnHide(...)
-    StaticPopup_Hide("BUYEMALL_CONFIRM")
-    return OldMerchantFrame_OnHide(unpack(arg))
-end
-
-
-
-
-
-function BuyEmAll_UpdateCost(amount)
-    local button = BuyEmAllFrame.owner
-    local purchase = ceil((amount and amount or BuyEmAllFrame.split) / button.presetStack)
-    local cost = purchase * button.price
-    
-    MoneyFrame_Update("BuyEmAllCostMoney", cost)
-end
-
-
-
-
-function BuyEmAllStack_Click()
-    BuyEmAll_ConfirmPurchase(BuyEmAllFrame.owner.stackSize)
-end
-
-
-
-
-function BuyEmAllMax_Click()
-    BuyEmAll_ConfirmPurchase(BuyEmAllFrame.maxStack)
-end
-
-
-
-
-function BuyEmAll_ConfirmPurchase(amount)
-    local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, BuyEmAllFrame.owner.itemName)
-    dialog.data = amount
-end
-
-
-
-
-function BuyEmAllStackButton_Enter()
-    local amount = BuyEmAllFrame.owner.stackSize
-    BuyEmAll_UpdateCost(amount)
-    
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText(BUYEMALL_STACK_SIZE.."|cFFFFFFFF - |r"..GREEN_FONT_COLOR_CODE..amount.."|r")
-end
-
-
-
-
-function BuyEmAllMaxButton_Enter()
-    local amount = BuyEmAllFrame.maxStack
-    BuyEmAll_UpdateCost(amount)
-    
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText(BUYEMALL_CAN_BUY.."|cFFFFFFFF - |r"..GREEN_FONT_COLOR_CODE..amount.."|r")
-    
-    local amount2 = BuyEmAllFrame.owner.bagMax
-    local r,g,b = BuyEmAll_UnpackColor(HIGHLIGHT_FONT_COLOR)
-    GameTooltip:AddDoubleLine(BUYEMALL_CAN_FIT, amount2,r,g,b, BuyEmAll_GreenOrWhite(amount,amount2))
-    
-    amount2 = BuyEmAllFrame.owner.moneyMax
-    GameTooltip:AddDoubleLine(BUYEMALL_CAN_AFFORD, amount2,r,g,b, BuyEmAll_GreenOrWhite(amount,amount2))
-    
-    amount2 = BuyEmAllFrame.owner.available
-    if amount2 ~= -1 then
-        GameTooltip:AddDoubleLine(BUYEMALL_AVAILABLE, amount2,r,g,b,BuyEmAll_GreenOrWhite(amount,amount2))
-    end
-    
-    GameTooltip:Show()
-end
-
-
-
-
-function BuyEmAll_GreenOrWhite(amount1, amount2)
-    return BuyEmAll_UnpackColor(amount1 == amount2 and GREEN_FONT_COLOR or HIGHLIGHT_FONT_COLOR)
-end
-
-function BuyEmAll_UnpackColor(c)
-    return c.r, c.g, c.b
-end
-
-
-
-
-function BuyEmAllMSButton_Leave()
-    BuyEmAll_UpdateCost()
-    GameTooltip:Hide()
-end
-
-
-
-
---[[ Below is the modified code from the built-in StackSplitFrame ]]
-
-
-
-function OpenBuyEmAllFrame(maxStack, anchor, anchorTo)
-    if ( BuyEmAllFrame.owner ) then
-		BuyEmAllFrame.owner.hasBuyEmAll = 0;
-	end
-
-	BuyEmAllFrame.maxStack = maxStack;
-	if ( BuyEmAllFrame.maxStack < 2 ) then
-		BuyEmAllFrame:Hide();
-		return;
-	end
-
-	BuyEmAllFrame.owner = this;
-	this.hasBuyEmAll = 1;
-	BuyEmAllFrame.split = this.defaultStack;
-	BuyEmAllFrame.typing = 0;
-	BuyEmAllText:SetText(BuyEmAllFrame.split);
-	BuyEmAllLeftButton:Disable();
-	BuyEmAllRightButton:Enable();
- 
-    BuyEmAllStackButton:SetText(BuyEmAllStackButton.defaultText)
-    BuyEmAllMaxButton:SetText(BuyEmAllMaxButton.defaultText)
-    BuyEmAll_UpdateCost()
-    
-    BuyEmAllStackButton:Enable()
-    if BuyEmAllFrame.maxStack < this.stackSize then
-        BuyEmAllStackButton:Disable()
-    end
-
-	BuyEmAllFrame:ClearAllPoints();
-	BuyEmAllFrame:SetPoint(anchor, this, anchorTo, 0, 0);
-	BuyEmAllFrame:Show();
-end
-
-
-
-
-function BuyEmAllFrame_OnChar()
-	if ( arg1 < "0" or arg1 > "9" ) then
-		return;
-	end
-
-	if ( this.typing == 0 ) then
-		this.typing = 1;
-		this.split = 0;
-	end
-
-	local split = (this.split * 10) + arg1;
-	if ( split == this.split ) then
-		if( this.split == 0 ) then
-			this.split = 1;
-		end
-        BuyEmAll_UpdateCost()
-		return;
-	end
-
-	if ( split <= this.maxStack ) then
-		this.split = split;
-		BuyEmAllText:SetText(split);
-		if ( split == this.maxStack ) then
-			BuyEmAllRightButton:Disable();
-		else
-			BuyEmAllRightButton:Enable();
-		end
-		if ( split <= this.owner.presetStack ) then
-			BuyEmAllLeftButton:Disable();
-		else
-			BuyEmAllLeftButton:Enable();
-		end
-	elseif ( split == 0 ) then
-		this.split = 1;
-	end
-    BuyEmAll_UpdateCost()
-end
-
-
-
-
-function BuyEmAllFrame_OnKeyDown()
-	if ( arg1 == "BACKSPACE" or arg1 == "DELETE" ) then
-		if ( this.typing == 0 or this.split == 1 ) then
-			return;
-		end
-
-		this.split = floor(this.split / 10);
-		if ( this.split <= 1 ) then
-			this.split = 1;
-			this.typing = 0;
-        end
-        if ( this.split <= this.owner.presetStack ) then
-			BuyEmAllLeftButton:Disable();
-		else
-			BuyEmAllLeftButton:Enable();
-		end
-		BuyEmAllText:SetText(this.split);
-		if ( this.money == this.maxStack ) then
-			BuyEmAllRightButton:Disable();
-		else
-			BuyEmAllRightButton:Enable();
-		end
-        BuyEmAll_UpdateCost()
-	elseif ( arg1 == "ENTER" ) then
-		BuyEmAllOkay_Click();
-	elseif ( arg1 == "ESCAPE" ) then
-		BuyEmAllCancel_Click();
-	elseif ( arg1 == "LEFT" or arg1 == "DOWN" ) then
-		BuyEmAllLeft_Click();
-	elseif ( arg1 == "RIGHT" or arg1 == "UP" ) then
-		BuyEmAllRight_Click();
-	end
-end
-
-
-
-
-function BuyEmAllLeft_Click()
-    local preset = BuyEmAllFrame.owner.presetStack
-	if ( BuyEmAllFrame.split <= preset ) then
-		return;
-	end
-    
-    local decrease = mod(BuyEmAllFrame.split, preset)
-    decrease = decrease == 0 and preset or decrease
-
-	BuyEmAllFrame.split = BuyEmAllFrame.split - decrease
-
-	BuyEmAllText:SetText(BuyEmAllFrame.split)
-	if ( BuyEmAllFrame.split <= preset ) then
-		BuyEmAllLeftButton:Disable()
-	end
-	BuyEmAllRightButton:Enable()
-    BuyEmAll_UpdateCost()
-end
-
-
-
-
-function BuyEmAllRight_Click()
-    local preset = BuyEmAllFrame.owner.presetStack
-    local increase = preset - mod(BuyEmAllFrame.split, preset)
-
-	if ( BuyEmAllFrame.split + increase > BuyEmAllFrame.maxStack ) then
-		return;
-	end
-    
-	BuyEmAllFrame.split = BuyEmAllFrame.split + increase;
-	BuyEmAllText:SetText(BuyEmAllFrame.split);
-	if ( BuyEmAllFrame.split == BuyEmAllFrame.maxStack ) then
-		BuyEmAllRightButton:Disable();
-	end
-	BuyEmAllLeftButton:Enable();
-    BuyEmAll_UpdateCost()
-end
-
-
-
-
-function BuyEmAllOkay_Click()
-	if ( BuyEmAllFrame.owner ) then
-		BuyEmAllFrame.owner.SplitStack(BuyEmAllFrame.split);
-	end
-end
-
-
-
-
-function BuyEmAllCancel_Click()
-	BuyEmAllFrame:Hide()
-    StaticPopup_Hide("BUYEMALL_CONFIRM")
-end
-
-
-
-
-function BuyEmAllFrame_OnHide()
-	if ( this.owner ) then
-		BuyEmAllFrame.owner.hasBuyEmAll = 0;
-	end
-    StaticPopup_Hide("BUYEMALL_CONFIRM")
+    return returns.freeSpace, returns.specialSpace, stackSize
 end

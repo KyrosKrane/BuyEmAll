@@ -1,20 +1,43 @@
 ﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\UI.xsd">
-    <Script file="localization.lua"/>
-    <Script file="BuyEmAll.lua"/>
+	<!-- Template for the four main buttons -->
+	<Button name="BuyEmAllButtonTemplate" inherits="UIPanelButtonTemplate" virtual="true">
+		<Size x="70" y="24"/>
+		<Scripts>
+			<OnClick>
+				BuyEmAll:OnClick()
+			</OnClick>
+		</Scripts>
+	</Button>
+
+	<!-- Template for the two that need tooltips -->
+	<Button name="BuyEmAllButtonTooltipTemplate" inherits="BuyEmAllButtonTemplate" virtual="true">
+		<Scripts>
+			<OnEnter>
+				BuyEmAll:OnEnter()
+			</OnEnter>
+			<OnLeave>
+				BuyEmAll:OnLeave()
+			</OnLeave>
+		</Scripts>
+	</Button>
+
 	<Frame name="BuyEmAllFrame" frameStrata="HIGH" parent="UIParent" toplevel="true" enableMouse="true" enableKeyboard="true" hidden="true">
-		<Size>
-			<AbsDimension x="172" y="128"/>
-		</Size>
+		<Size x="172" y="128"/>
 		<Layers>
 			<Layer level="BACKGROUND">
+				<!-- The top border of the money frame. Note, I use UI-MoneyFrame2 in most of these textures
+					 because UI-MoneyFrame was slightly borked by Blizzard when they added the actual money
+					 box. MoneyFrame2 is nicer looking. -->
 				<Texture name="$parentTopTex" file="Interface\MoneyFrame\UI-MoneyFrame2">
 					<Size x="172" y="14"/>
 					<Anchors>
-						<Anchor point="TOP" relativePoint="TOP"/>
+						<Anchor point="TOP"/>
 					</Anchors>
 					<TexCoords left="0" right="0.671875" top="0" bottom=".109375"/>
 				</Texture>
+				
+				<!-- The actual box where the amount you will be buying goes -->
 				<Texture name="$parentMoneyTex" file="Interface\MoneyFrame\UI-MoneyFrame">
 					<Size x="172" y="34"/>
 					<Anchors>
@@ -22,31 +45,37 @@
 					</Anchors>
 					<TexCoords left="0" right="0.671875" top=".109375" bottom=".375"/>
 				</Texture>
+
+				<!-- The bottom border -->
 				<Texture name="$parentBottomTex" file="Interface\MoneyFrame\UI-MoneyFrame2">
 					<Size x="172" y="20"/>
 					<Anchors>
-						<Anchor point="BOTTOM" relativePoint="BOTTOM"/>
+						<Anchor point="BOTTOM"/>
 					</Anchors>
 					<TexCoords left="0" right="0.671875" top=".59375" bottom=".75"/>
 				</Texture>
+
+				<!-- The background behind the buttons -->
 				<Texture name="$parentBackTex" file="Interface\MoneyFrame\UI-MoneyFrame2">
-					<Size x="172" y="128"/>
 					<Anchors>
-						<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parentMoneyTex"/>
-						<Anchor point="BOTTOM" relativePoint="TOP" relativeTo="$parentBottomTex"/>
+						<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parentMoneyTex"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parentBottomTex"/>
 					</Anchors>
 					<TexCoords left="0" right="0.671875" top=".375" bottom=".59375"/>
 				</Texture>
+
+				<!-- This is the number that goes inside $parentMoneyTex -->
 				<FontString name="BuyEmAllText" inherits="GameFontHighlight" justifyH="RIGHT">
 					<Anchors>
-						<Anchor point="TOPRIGHT">
-							<Offset x="-50" y="-23"/>
+						<Anchor point="RIGHT" relativeTo="$parentMoneyTex">
+							<Offset x="-50" y="0"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
 			</Layer>
 		</Layers>
 		<Frames>
+			<!-- These are the left and right arrows used for changing the amount -->
 			<Button name="BuyEmAllLeftButton">
 				<Size x="16" y="16"/>
 				<Anchors>
@@ -56,7 +85,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						BuyEmAllLeft_Click();
+						BuyEmAll:Left_Click();
 					</OnClick>
 				</Scripts>
 				<NormalTexture file="Interface\MoneyFrame\Arrow-Left-Up"/>
@@ -72,99 +101,63 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						BuyEmAllRight_Click();
+						BuyEmAll:Right_Click();
 					</OnClick>
 				</Scripts>
 				<NormalTexture file="Interface\MoneyFrame\Arrow-Right-Up"/>
 				<PushedTexture file="Interface\MoneyFrame\Arrow-Right-Down"/>
 				<DisabledTexture file="Interface\MoneyFrame\Arrow-Right-Disabled"/>
 			</Button>
-			<Frame name="BuyEmAllCostMoney" inherits="SmallMoneyFrameTemplate">
+
+			<!-- The money frame where the cost of the purchase is displayed -->
+			<Frame name="BuyEmAllMoneyFrame" inherits="SmallMoneyFrameTemplate">
 				<Size x="120" y="24"/>
 				<Anchors>
-					<Anchor point="TOP" relativePoint="TOP">
+					<Anchor point="TOP">
 						<Offset x="8" y="-44"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						BuyEmAllCostMoney_OnLoad()
+						BuyEmAll:MoneyFrame_OnLoad()
 					</OnLoad>
 				</Scripts>
 			</Frame>
-			<Button name="BuyEmAllOkayButton" inherits="UIPanelButtonTemplate" text="OKAY">
-				<Size x="70" y="24"/>
+
+			<Button name="BuyEmAllOkayButton" inherits="BuyEmAllButtonTemplate" text="OKAY">
 				<Anchors>
 					<Anchor point="RIGHT" relativePoint="BOTTOM">
 						<Offset x="1" y="28"/>
 					</Anchor>
 				</Anchors>
-				<Scripts>
-					<OnClick>
-						BuyEmAllOkay_Click();
-					</OnClick>
-				</Scripts>
 			</Button>
-			<Button name="BuyEmAllCancelButton" inherits="UIPanelButtonTemplate" text="CANCEL">
-				<Size x="70" y="24"/>
+			<Button name="BuyEmAllCancelButton" inherits="BuyEmAllButtonTemplate" text="CANCEL">
 				<Anchors>
 					<Anchor point="LEFT" relativePoint="BOTTOM">
 						<Offset x="1" y="28"/>
 					</Anchor>
 				</Anchors>
-				<Scripts>
-					<OnClick>
-						BuyEmAllCancel_Click();
-					</OnClick>
-				</Scripts>
 			</Button>
-            <Button name="BuyEmAllStackButton" inherits="UIPanelButtonTemplate">
-				<Size x="70" y="24"/>
+			<Button name="BuyEmAllStackButton" inherits="BuyEmAllButtonTooltipTemplate" text="BUYEMALL_STACK">
 				<Anchors>
-                    <Anchor point="BOTTOMLEFT" relativeTo="BuyEmAllOkayButton" relativePoint="TOPLEFT"/>
-                </Anchors>
-				<Scripts>
-					<OnClick>
-						BuyEmAllStack_Click()
-					</OnClick>
-					<OnEnter>
-						BuyEmAllStackButton_Enter()
-					</OnEnter>
-					<OnLeave>
-						BuyEmAllMSButton_Leave()
-					</OnLeave>
-				</Scripts>
-            </Button>
-			<Button name="BuyEmAllMaxButton" inherits="UIPanelButtonTemplate">
-				<Size x="70" y="24"/>
+					<Anchor point="BOTTOMLEFT" relativeTo="BuyEmAllOkayButton" relativePoint="TOPLEFT"/>
+				</Anchors>
+			</Button>
+			<Button name="BuyEmAllMaxButton" inherits="BuyEmAllButtonTooltipTemplate" text="BUYEMALL_MAX">
 				<Anchors>
 					<Anchor point="BOTTOMLEFT" relativeTo="BuyEmAllCancelButton" relativePoint="TOPLEFT"/>
 				</Anchors>
-				<Scripts>
-					<OnClick>
-						BuyEmAllMax_Click()						
-					</OnClick>
-					<OnEnter>
-						BuyEmAllMaxButton_Enter()
-					</OnEnter>
-					<OnLeave>
-						BuyEmAllMSButton_Leave()
-					</OnLeave>
-				</Scripts>
 			</Button>
 		</Frames>
 		<Scripts>
-            <OnLoad>
-                BuyEmAllFrame_OnLoad()
-            </OnLoad>
 			<OnHide>
-				BuyEmAllFrame_OnHide();
+				BuyEmAll:OnHide();
 			</OnHide>
 			<OnChar>
-				BuyEmAllFrame_OnChar();
+				BuyEmAll:OnChar();
 			</OnChar>
 			<OnKeyDown>
-				BuyEmAllFrame_OnKeyDown();
+				BuyEmAll:OnKeyDown();
 			</OnKeyDown>
 		</Scripts>
 	</Frame>

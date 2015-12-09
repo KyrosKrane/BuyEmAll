@@ -1,6 +1,6 @@
-BuyEmAll - v1.12.1
+BuyEmAll - v2.0
 
-By Cogwheel
+By Cogwheel - Inspired by Tanao of Llane
 
 BuyEmAll enhances the shift-click interface at vendors.
 
@@ -18,7 +18,7 @@ With BuyEmAll, you shift-click the thread, enter 80, hit OK, and confirm that yo
 
 ** Shift-click items that come in preset stacks **
 
-The default UI doesn't allow you to shift-click items like Refreshing Spring Water which come in preset stacks. If you want to buy 50 of them, you have to right-click the item 10 times. BuyEmAll allows you to shift-click the item and enter the amount you want. See below for more information on preset stacks.
+The default UI doesn't allow you to shift-click items like Refreshing Spring Water which come in preset stacks. If you want to buy 50 of them, you have to right-click the item 10 times. BuyEmAll allows you to shift-click the item and enter the amount you want. See NOTES below for more information on preset stacks.
 
 ** Know how much you will be spending **
 
@@ -30,7 +30,7 @@ The BuyEmAll window has Stack and Max buttons which allow you to buy a full stac
 
 ** Quickly refill your ammo pouch **
 
-If you are buying ammo and have free spots in your ammo pouch/quiver, the amount that appears when you first shift-click the item will be however many stacks it takes to refill your bag. Just hit enter, and you bag will be filled.
+If you are buying ammo and have free spots in your ammo pouch/quiver, the amount that appears when you first shift-click the ammo will be however many stacks it takes to refill your bag. Just hit enter, and you bag will be filled.
 
 
 ---------- NOTES ----------
@@ -43,7 +43,7 @@ The amount you can enter is limited by:
 
 - The number available from the vendor (for limited stock items).
 
-A breakdown of these numbers is included in the tooltip when you mouse over the Max button.
+A breakdown of these numbers is included in the Max button's tooltip.
 
 If you can only buy one item for any of these reasons, shift-click behaves just like a left click, picking up one of the item onto your cursor. If you can't buy any, then shift-click does nothing.
 
@@ -53,24 +53,29 @@ The confirmation window will only show up if you buy more than the maximum stack
 
 Example: [Refreshing Spring Water] - Stack Size: 20, Purchase Unit: 5
 
-If you enter 18, it will automatically buy 20 with no confirmation. If you enter 23, a confirmation will pop up asking, "Are you sure you want to buy 25 of this item?"
+If you enter 18 and hit Okay, it will automatically buy 20 with no confirmation. If you enter 23, a confirmation will pop up asking, "Are you sure you want to buy 25 of this item?"
 
 
----------- BUGS/FEATURES ----------
+---------- BUGS/FEATURES REQUESTS ----------
 
-** You may experience errors if you use Recipe Book **
+You may experience errors if you use Recipe Book or Advanced Trade Skill Window. I have not been able to reproduce any problems with either addon, but I have received a report for each of them.
 
-Please visit Cogwheel's Workshop at http://wowinterface.com/portal.php?&uid=17646 if you have any suggestions or bug reports, and to see what is in store for the future.
+Please visit Cogwheel's Workshop at http://cogwheel.wowinterface.com if you have any suggestions or bug reports, and to see what is in store for the future.
 
 
 ---------- CHANGES ----------
+
+v2.0
+
+- Stack button will now be disabled for items that do not stack.
+- Ace2ified. Functionality is the same except for the above patch change, but behind the scenes it's a whole new beast.
 
 v1.12.1
 
 - Disabled display of the "Vendor has" line of the Max tooltip if there is no limit.
 - Changed coloring of tooltip text.
-- French translation courtesy of Layrajha
-- Chinese translation thanks to q09q09
+- French translation courtesy of Layrajha.
+- Chinese translation thanks to q09q09.
 
 v1.12
 
