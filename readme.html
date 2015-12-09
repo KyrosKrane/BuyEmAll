@@ -92,7 +92,7 @@
 
 <body>
 <h1>BuyEmAll</h1>
-<p>By Cogwheel — v2.6.2</p>
+<p>By Cogwheel — v2.6.3</p>
 <p>BuyEmAll enhances the shift-click interface at vendors.</p>
 <p>Please visit <a href="http://cogwheel.wowinterface.com">Cogwheel’s Workshop</a> for updates, bug reports, feature requests, etc. </p>
 <ul>
@@ -130,7 +130,6 @@
 <p>The BuyEmAll window has  <kbd>Stack</kbd> and <kbd>Max</kbd> buttons which allow you to enter a full stack or as much as you can afford/fit. Hovering over the buttons shows a tooltip with the number of items you will be buying and updates the cost display so you will know how much you’ll be spending. See <a href="#notes">Notes</a> for information on the maximum you can buy.</p>
 <p>If you already have some of an item, the first click of the <kbd>Stack</kbd> button will enter the amount you need to fill that stack. Subsequent clicks will add full stacks to your pruchase.</p>
 <h4> <a name="ammo" id="ammo"></a>Quickly refill your ammo pouch </h4>
-<p>Notice: there is a bug in the 2.0.1 patch. See <a href="#bullets">Notes</a> below. </p>
 <p>If you are buying ammo and have free spots in your ammo pouch/quiver, the amount that appears when you first shift-click the ammo will be however many stacks it takes to refill your bag. Just hit <kbd>Enter/Return</kbd>, and you bag will be filled.</p>
 <h2><a name="notes" id="notes"></a>Notes </h2>
 <h3><a name="maxnote" id="maxnote"></a>Maximum Purchase </h3>
@@ -148,17 +147,17 @@
 <h4>Example</h4>
 <p><span class="item common">Refreshing&nbsp;Spring&nbsp;Water</span> — Stack Size: 20, Preset Stack: 5</p>
 <p>If you enter 18 and hit <kbd>Okay</kbd>, it will automatically buy 20 with no confirmation. If you enter 23, a confirmation will pop up asking, “Are you sure you want to buy 25 of this item?”</p>
-<h3><a name="bullets" id="bullets"></a>Bullets/Arrows</h3>
-<p>Unfortunately, patch 2.0.1 introduced a bug where ammo pouches are being reported as quivers. This means that BuyEmAll has no direct way of knowing whether a bullet can fit into an ammo pouch. For the time being, I have set it up so it thinks bullets can fit into quivers. This means that if you have a quiver and attempt to buy bullets, it will automatically enter the amount necessary to fill the quiver even though your bullets will not actually fit.</p>
-<p>Of course, how many of you are really going to try to buy bullets when you use arrows?  </p>
 <h2><a name="bugs" id="bugs"></a>Bugs/Improvements</h2>
 <p>There are no confirmed bugs at this time.</p>
-<p>Please visit <a href="http://cogwheel.wowinterface.com">Cogwheel’s Workshop</a>  if you have any suggestions or bug reports, and to see what is in store for the future.<br />
-</p>
+<p>Please visit <a href="http://cogwheel.wowinterface.com">Cogwheel’s Workshop</a>  if you have any suggestions or bug reports, and to see what is in store for the future.</p>
 <h2><a name="changes" id="changes"></a>Changes</h2>
+<h4>v2.6.3</h4>
+<ul>
+	<li>Fixed ammo pouch bug.</li>
+</ul>
 <h4>v2.6.2</h4>
 <ul>
-	<li>Added workaround for ammo pouch bug. See <a href="#bullets">Notes</a>. </li>
+	<li>Added workaround for ammo pouch bug.</li>
 </ul>
 <h4>v2.6.1</h4>
 <ul>
