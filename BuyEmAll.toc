@@ -1,0 +1,7 @@
+## Interface: 11100
+## Title: BuyEmAll
+## Author: Cogwheel
+## Version: 1.0
+## Notes: Allows you to buy more than the stack size of an item when you shift-click
+## eMail: mcogwheel@gmail.com
+BuyEmAll.xml
