@@ -1,4 +1,4 @@
-if GetLocale() ~= "deDE" then
+ï»¿if GetLocale() ~= "deDE" then
 	return
 end
 
@@ -7,11 +7,11 @@ local L = BUYEMALL_LOCALS
 -- Thanks to JokerGermany
 -- L.MAX 		= "Max"
 -- L.STACK 		= "Stack"
-L.CONFIRM = "Bist du sicher das du\n %d × %s kaufen willst?"
+L.CONFIRM = "Bist du sicher das du\n %d Ã— %s kaufen willst?"
 -- L.STACK_PURCH	= "Stack Purchase"
-L.STACK_SIZE = "Stack größe"
+L.STACK_SIZE = "Stack grÃ¶ÃŸe"
 -- L.PARTIAL 	= "Partial stack"
-L.MAX_PURCH = "Größt möglcher Einkauf"
-L.FIT = "Du hast Platz für"
+L.MAX_PURCH = "GrÃ¶ÃŸt mÃ¶glcher Einkauf"
+L.FIT = "Du hast Platz fÃ¼r"
 L.AFFORD = "Du kannst dir leisten"
-L.AVAILABLE = "Der Verkäufer hat"
+L.AVAILABLE = "Der VerkÃ¤ufer hat"

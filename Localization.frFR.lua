@@ -1,4 +1,4 @@
-if GetLocale() ~= "frFR" then
+﻿if GetLocale() ~= "frFR" then
 	return
 end
 
@@ -7,7 +7,7 @@ local L = BUYEMALL_LOCALS
 -- Thanks to Layrajha
 -- L.MAX 			= "Max"
 L.STACK 		= "Pile"
-L.CONFIRM 		= "Voulez-vous vraiment acheter\n %d � %s?"
+L.CONFIRM 		= "Voulez-vous vraiment acheter\n %d × %s?"
 -- L.STACK_PURCH	= "Stack Purchase"
 L.STACK_SIZE 	= "Taille de pile"
 -- L.PARTIAL 		= "Partial stack"

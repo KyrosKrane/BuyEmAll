@@ -1,4 +1,4 @@
--- BuyEmAll - Originally created and developed by Cogwheel up to version 2.8.4, now developed by Shinisuryu.
+﻿-- BuyEmAll - Originally created and developed by Cogwheel up to version 2.8.4, now developed by Shinisuryu.
 BuyEmAll = {}
 
 local L = BUYEMALL_LOCALS
@@ -36,15 +36,24 @@ end
 SLASH_BUYEMALL1 = "/buyemall"
 SlashCmdList["BUYEMALL"] = function(message, editbox) BuyEmAll:SlashHandler(message, editbox) end
 function BuyEmAll:SlashHandler(message, editbox)
-	if message == "toggleconfirm" then
+	if message == "" then
+		print("BuyEmAll: Use /buyemall confirm or toggleconfirm to enable/disable the large purchange confirm.")
+	elseif message == "confirm" then 
 		if BEAConfirmToggle == 1 then
 			BEAConfirmToggle = 0
 			print("BuyEmAll: Large purchase confirm window disabled.")
-		else
+		elseif BEAConfirmToggle == 0 then
 			BEAConfirmToggle = 1
 			print("BuyEmAll: Large purchase confirm window enabled.")
 		end
-	elseif message ~= "toggleconfirm" then return
+	elseif message == "confirm" then
+		if BEAConfirmToggle == 1 then
+			BEAConfirmToggle = 0
+			print("BuyEmAll: Large purchase confirm window disabled.")
+		elseif BEAConfirmToggle == 0 then
+			BEAConfirmToggle = 1
+			print("BuyEmAll: Large purchase confirm window enabled.")
+		end
 	end
 end
 
@@ -70,7 +79,6 @@ function BuyEmAll:MerchantFrame_OnHide(...)
 	return self.OrigMerchantFrame_OnHide(...)
 end
 
-
 function BuyEmAll:CogsFreeBagSpace(itemID)
 	local freeSpace = 0
 	local itemSubType = GetItemFamily(itemID)
@@ -87,6 +95,8 @@ function BuyEmAll:CogsFreeBagSpace(itemID)
 					doBag = true
 				elseif bagSubType == 0 then
 					doBag = true
+				elseif itemSubType / 16 == 9 then
+					dobag = true
 				else doBag = false
 				end
 			else
