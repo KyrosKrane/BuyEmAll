@@ -1,6 +1,6 @@
--- BuyEmAll - By Cogwheel v1.12 - See readme.txt
+-- BuyEmAll - By Cogwheel v1.12.1 - See readme.txt
 
---[[Hook BuyMerchantItem for debugging purposes 
+--[[Hook BuyMerchantItem for debugging purposes
 function BuyMerchantItem(button, amount)
     if not amount then amount = 1 end
     print("Buying "..amount.." items.")
@@ -286,7 +286,7 @@ function BuyEmAllStackButton_Enter()
     BuyEmAll_UpdateCost(amount)
     
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText(BUYEMALL_STACK_SIZE.." - |cFFFFFFFF"..amount.."|r")
+    GameTooltip:SetText(BUYEMALL_STACK_SIZE.."|cFFFFFFFF - |r"..GREEN_FONT_COLOR_CODE..amount.."|r")
 end
 
 
@@ -297,17 +297,32 @@ function BuyEmAllMaxButton_Enter()
     BuyEmAll_UpdateCost(amount)
     
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText(BUYEMALL_CAN_BUY.." - |cFFFFFFFF"..amount.."|r")
-    GameTooltip:AddDoubleLine(BUYEMALL_CAN_FIT, BuyEmAllFrame.owner.bagMax,1,1,1,1,1,1)
-    GameTooltip:AddDoubleLine(BUYEMALL_CAN_AFFORD, BuyEmAllFrame.owner.moneyMax,1,1,1,1,1,1)
+    GameTooltip:SetText(BUYEMALL_CAN_BUY.."|cFFFFFFFF - |r"..GREEN_FONT_COLOR_CODE..amount.."|r")
     
-    local available = BuyEmAllFrame.owner.available
-    if available == -1 then
-        available = "∞"
+    local amount2 = BuyEmAllFrame.owner.bagMax
+    local r,g,b = BuyEmAll_UnpackColor(HIGHLIGHT_FONT_COLOR)
+    GameTooltip:AddDoubleLine(BUYEMALL_CAN_FIT, amount2,r,g,b, BuyEmAll_GreenOrWhite(amount,amount2))
+    
+    amount2 = BuyEmAllFrame.owner.moneyMax
+    GameTooltip:AddDoubleLine(BUYEMALL_CAN_AFFORD, amount2,r,g,b, BuyEmAll_GreenOrWhite(amount,amount2))
+    
+    amount2 = BuyEmAllFrame.owner.available
+    if amount2 ~= -1 then
+        GameTooltip:AddDoubleLine(BUYEMALL_AVAILABLE, amount2,r,g,b,BuyEmAll_GreenOrWhite(amount,amount2))
     end
-    GameTooltip:AddDoubleLine(BUYEMALL_AVAILABLE, available,1,1,1,1,1,1)
     
     GameTooltip:Show()
+end
+
+
+
+
+function BuyEmAll_GreenOrWhite(amount1, amount2)
+    return BuyEmAll_UnpackColor(amount1 == amount2 and GREEN_FONT_COLOR or HIGHLIGHT_FONT_COLOR)
+end
+
+function BuyEmAll_UnpackColor(c)
+    return c.r, c.g, c.b
 end
 
 

@@ -1,4 +1,4 @@
-BuyEmAll - v1.12
+BuyEmAll - v1.12.1
 
 By Cogwheel
 
@@ -56,14 +56,21 @@ Example: [Refreshing Spring Water] - Stack Size: 20, Purchase Unit: 5
 If you enter 18, it will automatically buy 20 with no confirmation. If you enter 23, a confirmation will pop up asking, "Are you sure you want to buy 25 of this item?"
 
 
----------- FEATURES/BUGS ----------
+---------- BUGS/FEATURES ----------
 
-There are no known bugs at this time, though any help with localization would be appreciated.
+** You may experience errors if you use Recipe Book **
 
 Please visit Cogwheel's Workshop at http://wowinterface.com/portal.php?&uid=17646 if you have any suggestions or bug reports, and to see what is in store for the future.
 
 
 ---------- CHANGES ----------
+
+v1.12.1
+
+- Disabled display of the "Vendor has" line of the Max tooltip if there is no limit.
+- Changed coloring of tooltip text.
+- French translation courtesy of Layrajha
+- Chinese translation thanks to q09q09
 
 v1.12
 
