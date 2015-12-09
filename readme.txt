@@ -1,4 +1,4 @@
-BuyEmAll - v2.1.1
+BuyEmAll - v2.1.2
 
 By Cogwheel
 
@@ -64,6 +64,11 @@ Please visit Cogwheel's Workshop at http://cogwheel.wowinterface.com if you have
 
 
 ---------- CHANGES ----------
+
+v2.1.2
+
+- Fixed a bug that caused an error for people with enchanting or herbalism bags
+- Updated Ace2 libs
 
 v2.1.1
 

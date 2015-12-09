@@ -1,6 +1,6 @@
 --[[
 Name: AceEvent-2.0
-Revision: $Rev: 10447 $
+Revision: $Rev: 11577 $
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
@@ -12,7 +12,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceEvent-2.0"
-local MINOR_VERSION = "$Revision: 10447 $"
+local MINOR_VERSION = "$Revision: 11577 $"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -38,6 +38,17 @@ local AceEvent = Mixin {
 						"UnregisterAllBucketEvents",
 						"IsBucketEventRegistered",
 					   }
+
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
 
 local weakKey = {__mode="k"}
 local new, del
@@ -98,6 +109,8 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
+	else
+		assert(type(method) == "function" or type(method) == "string")
 	end
 
 	local AceEvent_registry = AceEvent.registry
@@ -174,13 +187,14 @@ function AceEvent:RegisterAllEvents(method)
 			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
 		end
 	end
-
-	if not AceEvent.registry[ALL_EVENTS] then
-		AceEvent.registry[ALL_EVENTS] = new()
+	
+	local AceEvent_registry = AceEvent.registry
+	if not AceEvent_registry[ALL_EVENTS] then
+		AceEvent_registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
 
-	AceEvent.registry[ALL_EVENTS][self] = method
+	AceEvent_registry[ALL_EVENTS][self] = method
 end
 
 local _G = getfenv(0)
@@ -376,7 +390,6 @@ end
 
 -- local accessors
 local getn = table.getn
-local setn = table.setn
 local tinsert = table.insert
 local tremove = table.remove
 local floor = math.floor
@@ -401,17 +414,29 @@ local function OnUpdate()
 				v.time = v_time + v_repeatDelay
 			end
 			local event = v.event
+			local mem, time
+			if AceEvent_debugTable then
+				mem, time = gcinfo(), GetTime()
+			end
 			if type(event) == "function" then
 				event(unpack(v))
 			else
 				AceEvent:TriggerEvent(event, unpack(v))
 			end
-			if not v_repeatDelay then
-				delayRegistry[k] = del(v)
-			else
-				last = k
+			if AceEvent_debugTable then
+				mem, time = gcinfo() - mem, GetTime() - time
+				v.mem = v.mem + mem
+				v.timeSpent = v.timeSpent + time
+				v.count = v.count + 1
 			end
-		else
+			if not v_repeatDelay then
+				local x = delayRegistry[k]
+				if x and x.time == v_time then -- check if it was manually reset
+					delayRegistry[k] = del(v)
+				end
+			end
+		end
+		if delayRegistry[k] then
 			last = k
 		end
 		k,v = next(delayRegistry, last)
@@ -474,12 +499,17 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	t[18] = a18
 	t[19] = a19
 	t[20] = a20
-	t.n = 20
+	table_setn(t, 20)
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
+	if AceEvent_debugTable then
+		t.mem = 0
+		t.count = 0
+		t.timeSpent = 0
+	end
 	delayRegistry[t.id] = t
 	AceEvent.frame:Show()
 	return t.id
@@ -790,6 +820,16 @@ end
 function AceEvent:EnableDebugging()
 	if not self.debugTable then
 		self.debugTable = new()
+		
+		if delayRegistry then
+			for k,v in pairs(self.delayRegistry) do
+				if not v.mem then
+					v.mem = 0
+					v.count = 0
+					v.timeSpent = 0
+				end
+			end
+		end
 	end
 end
 

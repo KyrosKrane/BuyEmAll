@@ -3,7 +3,7 @@
 ## Url: http://cogwheel.wowinterface.com
 ## eMail: mcogwheel@gmail.com
 ## Title: BuyEmAll
-## Version: 2.1.1
+## Version: 2.1.2
 ## Notes: Enhances shift-click interface at vendors
 ## X-Category: Interface Enhancements
 

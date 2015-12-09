@@ -439,7 +439,7 @@ BuyEmAll.specialBagItems = {
 Determine whether an item is an herb or enchanting material
 ]]
 function BuyEmAll:IsSpecialBagItem(bagType, itemID)
-    for curID in gfind(self.specialBagItems[bagType], "%d+") do
+    for curID in string.gfind(self.specialBagItems[bagType], "%d+") do
         if itemID == curID then return true end
     end
     return false

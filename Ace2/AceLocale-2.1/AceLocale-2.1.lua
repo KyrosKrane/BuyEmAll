@@ -1,6 +1,6 @@
 --[[
 Name: AceLocale-2.1
-Revision: $Rev: 10447 $
+Revision: $Rev: 11177 $
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
@@ -12,7 +12,7 @@ Dependencies: AceLibrary
 ]]
 
 local MAJOR_VERSION = "AceLocale-2.1"
-local MINOR_VERSION = "$Revision: 10447 $"
+local MINOR_VERSION = "$Revision: 11177 $"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -91,7 +91,7 @@ function AceLocale:RegisterTranslation(uid, locale, func)
         instance[baseLocale] = locale
         
         for k, v in pairs(instance[baseTranslation]) do
-            if type(v) ~= "string" then
+            if type(v) ~= "string" and type(v) ~= "table" then
                 if type(v) == "boolean" then 
                     instance[baseTranslation][k] = k 
                 else

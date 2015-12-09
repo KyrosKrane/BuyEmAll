@@ -1,6 +1,6 @@
 --[[
 Name: AceHook-2.0
-Revision: $Rev: 10447 $
+Revision: $Rev: 11577 $
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
@@ -11,7 +11,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceHook-2.0"
-local MINOR_VERSION = "$Revision: 10447 $"
+local MINOR_VERSION = "$Revision: 11577 $"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
@@ -32,6 +32,17 @@ local AceHook = AceOO.Mixin {
 								"IsHooked",
 								"HookScript",
 							}
+
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
 
 --[[---------------------------------------------------------------------------------
   Library Definitions
@@ -90,7 +101,7 @@ do
 	
 	function del(t)
 		setmetatable(t, nil)
-		table.setn(t, 0)
+		table_setn(t, 0)
 		for k in pairs(t) do
 			t[k] = nil
 		end
