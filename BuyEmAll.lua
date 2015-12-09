@@ -1,6 +1,6 @@
--- BuyEmAll - By Cogwheel v1.10 - See readme.txt
+-- BuyEmAll - By Cogwheel v1.11.1 - See readme.txt
 
---[[Hook BuyMerchantItem for debugging purposes 
+--[[Hook BuyMerchantItem for debugging purposes
 function BuyMerchantItem(button, amount)
     if not amount then amount = 1 end
     print("Buying "..amount.." items.")
@@ -26,23 +26,10 @@ function BuyEmAllFrame_OnLoad()
 		hideOnEscape = true
 	}
     
-    BuyEmAllCostLabel:SetText("Cost:")
-    BuyEmAllMaxLabel:SetText("Max:")
-    BuyEmAllStackButton:SetText("Stack")
+    BuyEmAllStackButton.defaultText = "Stack"
+    BuyEmAllMaxButton.defaultText = "Max"
+    
 
-    function BuyEmAllCostText:SetMoney(money)
-        local gold, silver, copper = floor(money/(100*100)),mod(floor(money/100),100),mod(floor(money),100)
-        local str
-        if gold > 0 then
-            str = "|cFFFFD700"..gold.."|rg |cFFC7C7CF"..silver.."|rs |cFFEDA55F"..copper.."|rc"
-        elseif silver > 0 then
-            str = "|cFFC7C7CF"..silver.."|rs |cFFEDA55F"..copper.."|rc"
-        else
-            str = "|cFFEDA55F"..copper.."|rc"
-        end
-        BuyEmAllCostText:SetText(str)
-    end
-	
     -- Replace the SplitStack callback and  for each merchant item button
 	for i=1,12 do
         local button=getglobal("MerchantItem"..i.."ItemButton")
@@ -53,6 +40,22 @@ function BuyEmAllFrame_OnLoad()
 			end
         end)
 	end
+end
+
+
+
+
+function BuyEmAllCostMoney_OnLoad()
+    MoneyTypeInfo["BUYEMALL"] = {
+        UpdateFunc = function() return this.staticMoney end,
+        showSmallerCoins = "Backpack",
+        fixedWidth = 1,
+        collapse = 0,
+        truncateSmallCoins = nil
+    }
+    this.small = 1
+    this.staticMoney = 0
+    MoneyFrame_SetType("BUYEMALL")
 end
 
 
@@ -118,9 +121,10 @@ function BuyEmAll_ChooseAmount()
     
     local bagSpace, specialSpace = BuyEmAll_FreeSpace(name, itemID)
     local specialMax = floor(specialSpace / quantity) * quantity
-    local bagMax = floor(bagSpace / quantity) * quantity + specialMax
-    local moneyMax = floor(GetMoney() / price) * quantity
-    local maxPurchase = min(bagMax, moneyMax)
+    this.bagMax = floor(bagSpace / quantity) * quantity + specialMax
+    this.moneyMax = floor(GetMoney() / price) * quantity
+    this.available = numAvailable
+    local maxPurchase = min(this.bagMax, this.moneyMax)
     if numAvailable > 0 then maxPurchase = min(maxPurchase, numAvailable * quantity) end
     this.defaultStack = specialMax > 0 and specialMax <= maxPurchase and specialMax or quantity
     
@@ -240,12 +244,13 @@ end
 
 
 
-function BuyEmAll_UpdateCost()
+function BuyEmAll_UpdateCost(amount)
     local button = BuyEmAllFrame.owner
-    local purchase = ceil(BuyEmAllFrame.split / button.presetStack)
+    local purchase = ceil((amount and amount or BuyEmAllFrame.split) / button.presetStack)
     local cost = purchase * button.price
     
-    BuyEmAllCostText:SetMoney(cost)
+    MoneyFrame_Update("BuyEmAllCostMoney", cost)
+    --BuyEmAllCostText:SetMoney(cost)
 end
 
 
@@ -254,6 +259,49 @@ end
 function BuyEmAllStack_Click()
     BuyEmAllFrame.split = BuyEmAllFrame.owner.stackSize
     BuyEmAllOkay_Click()
+end
+
+
+
+
+function BuyEmAllMax_Click()
+    BuyEmAllFrame.split = BuyEmAllFrame.maxStack
+    BuyEmAllOkay_Click()
+end
+
+
+
+
+function BuyEmAllStackButton_Enter()
+    local amount = BuyEmAllFrame.owner.stackSize
+    BuyEmAll_UpdateCost(amount)
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetText("Stack Size - |cFFFFFFFF"..amount.."|r")
+end
+
+
+
+
+function BuyEmAllMaxButton_Enter()
+    local amount = BuyEmAllFrame.maxStack
+    BuyEmAll_UpdateCost(amount)
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetText("Maximum Purchase - |cFFFFFFFF"..amount.."|r")
+    GameTooltip:AddDoubleLine("Free Space:", BuyEmAllFrame.owner.bagMax,1,1,1,1,1,1)
+    GameTooltip:AddDoubleLine("Affordability:", BuyEmAllFrame.owner.moneyMax,1,1,1,1,1,1)
+    if BuyEmAllFrame.owner.available > 0 then
+        GameTooltip:AddDoubleLine("Availability:", BuyEmAllFrame.owner.available,1,1,1,1,1,1)
+    end
+    GameTooltip:Show()
+end
+
+
+
+
+function BuyEmAllMSButton_Leave(amount)
+    BuyEmAll_UpdateCost()
+--    this:SetText(this.defaultText)
+    GameTooltip:Hide()
 end
 
 
@@ -282,8 +330,14 @@ function OpenBuyEmAllFrame(maxStack, anchor, anchorTo)
 	BuyEmAllLeftButton:Disable();
 	BuyEmAllRightButton:Enable();
  
-    BuyEmAllMaxText:SetText(maxStack)
+    BuyEmAllStackButton:SetText(BuyEmAllStackButton.defaultText)
+    BuyEmAllMaxButton:SetText(BuyEmAllMaxButton.defaultText)
     BuyEmAll_UpdateCost()
+    
+    BuyEmAllStackButton:Enable()
+    if BuyEmAllFrame.maxStack < this.stackSize then
+        BuyEmAllStackButton:Disable()
+    end
 
 	BuyEmAllFrame:ClearAllPoints();
 	BuyEmAllFrame:SetPoint(anchor, this, anchorTo, 0, 0);
