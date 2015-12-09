@@ -33,8 +33,6 @@ function BuyEmAll:OnLoad()
 end
 
 
-
-
 function BuyEmAll:MoneyFrame_OnLoad(frame)
 	-- Set up money frame
 	MoneyTypeInfo["BUYEMALL"] = {
@@ -48,8 +46,6 @@ function BuyEmAll:MoneyFrame_OnLoad(frame)
 end
 
 
-
-
 --[[
 Makes sure the BuyEmAll frame goes away when you leave a vendor
 ]]
@@ -57,8 +53,6 @@ function BuyEmAll:MerchantFrame_OnHide(...)
 	BuyEmAllFrame:Hide()
 	return self.OrigMerchantFrame_OnHide(...)
 end
-
-
 
 
 --[[
@@ -111,8 +105,6 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 end
 
 
-
-
 --[[
 Prepare the various UI elements of the BuyEmAll frame and show it
 ]]
@@ -134,8 +126,6 @@ function BuyEmAll:Show(frame)
 end
 
 
-
-
 --[[
 If the amount is more than stack and defaultStack, show a confirmation.
 Otherwise, do the purchase
@@ -151,8 +141,6 @@ function BuyEmAll:VerifyPurchase(amount)
 		end
 	end
 end
-
-
 
 
 --[[
@@ -182,9 +170,6 @@ function BuyEmAll:DoPurchase(amount)
 end
 
 
-
-
-
 --[[
 Changes the money display to however much amount of the item will cost. If
 amount is not specified, it uses the current split value.
@@ -211,8 +196,6 @@ function BuyEmAll:UpdateDisplay()
 end
 
 
-
-
 --[[
 Shows the confirmation dialog
 ]]
@@ -220,8 +203,6 @@ function BuyEmAll:DoConfirmation(amount)
 	local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, self.itemName)
 	dialog.data = amount
 end
-
-
 
 
 --[[
@@ -232,32 +213,48 @@ function BuyEmAll:SetStackClick()
 	self.stackClick = self.split + (increase == 0 and self.stack or increase)
 end
 
-
+function BuyEmAll:SetDeStackClick()
+	local BEATesting = tonumber(BuyEmAllText:GetText())
+	if BEATesting <= self.stack then
+		self.split = self.preset
+		self:UpdateDisplay()
+	else
+		self.split = BEATesting - self.stack
+		self:UpdateDisplay()
+	end
+end
 
 
 --[[
 OnClick handler for the four main buttons
 ]]
-function BuyEmAll:OnClick(frame)
+function BuyEmAll:OnClick(frame,button)
 	if frame == BuyEmAllOkayButton then
 		self:VerifyPurchase()
 	elseif frame == BuyEmAllCancelButton then
 		BuyEmAllFrame:Hide()
 	elseif frame == BuyEmAllStackButton then
-		self.split = self.stackClick
-		self:UpdateDisplay()
-		if frame:IsEnabled() == 1 then
-			self:OnEnter(frame)
+		if button == "LeftButton" then
+			self.split = self.stackClick
+			self:UpdateDisplay()
+			if frame:IsEnabled() == 1 then
+				self:OnEnter(frame)
+			else
+				GameTooltip:Hide()
+			end
 		else
-			GameTooltip:Hide()
+			self:SetDeStackClick()
+			if frame:IsEnabled() == 1 then
+				self:OnEnter(frame)
+			else
+				GameTooltip:Hide()
+			end
 		end
 	elseif frame == BuyEmAllMaxButton then
 		self.split = self.max
 		self:UpdateDisplay()
 	end
 end
-
-
 
 
 --[[
@@ -293,8 +290,6 @@ function BuyEmAll:OnChar(text)
 end
 
 
-
-
 --[[
 Key handler for keys other than 0-9
 ]]
@@ -325,8 +320,6 @@ function BuyEmAll:OnKeyDown(key)
 end
 
 
-
-
 --[[
 Decreases the amount by however much is necessary to go down to the next
 lowest multiple of the preset stack size.
@@ -345,8 +338,6 @@ function BuyEmAll:Left_Click()
 end
 
 
-
-
 --[[
 Increases the amount by however much is necessary to go up to the next highest
 multiple of the preset stack size.
@@ -362,8 +353,6 @@ function BuyEmAll:Right_Click()
 	
 	self:UpdateDisplay()
 end
-
-
 
 
 --[[
@@ -392,8 +381,6 @@ BuyEmAll.lines = {
 }
 
 
-
-
 --[[
 Shows tooltips when you hover over the Stack or Max buttons
 ]]
@@ -407,8 +394,6 @@ function BuyEmAll:OnEnter(frame)
 		
 	self:CreateTooltip(frame, lines)
 end
-
-
 
 
 --[[
@@ -433,8 +418,6 @@ function BuyEmAll:CreateTooltip(frame, lines)
 end
 
 
-
-
 --[[
 Hides the tooltip
 ]]
@@ -442,8 +425,6 @@ function BuyEmAll:OnLeave()
 	GameTooltip:Hide()
 	GameTooltip_ClearMoney(GameTooltip)
 end
-
-
 
 
 --[[
