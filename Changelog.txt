@@ -1,4 +1,8 @@
-﻿v3.2.0
+﻿v3.2.1
+Thought there was a problem, guess it was just a bug on Blizzard's end.
+Made some minor adjustments to sort out off textures.
+
+v3.2.0
 Haven't found any problems, so just TOC update.
 
 v3.1.8

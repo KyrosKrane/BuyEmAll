@@ -35,6 +35,15 @@ function BuyEmAll:OnLoad()
 		BEAConfirmToggle = 1;
 	end
 	
+	-- Clear textures and text to prevent pink textures.
+	
+	BuyEmAllCurrency1:SetTexture();
+	BuyEmAllCurrency2:SetTexture();
+	BuyEmAllCurrency3:SetTexture();
+	BuyEmAllCurrencyAmt1:SetText();
+	BuyEmAllCurrencyAmt2:SetText();
+	BuyEmAllCurrencyAmt3:SetText();
+	
 	self.OrigMerchantItemButton_OnModifiedClick = MerchantItemButton_OnModifiedClick;
 	MerchantItemButton_OnModifiedClick = function(frame, button)
 		self:MerchantItemButton_OnModifiedClick(frame, button);
@@ -154,11 +163,12 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		end
 
 		BuyEmAllCurrency1:SetTexture("Interface\\MONEYFRAME\\UI-GoldIcon");
-		BuyEmAllCurrency2:SetTexture("Interface\\MONEYFRAME\\UI-SilverIcon"); -- Once known it's a standard transation, use regular money textures
+		BuyEmAllCurrency2:SetTexture("Interface\\MONEYFRAME\\UI-SilverIcon"); -- Once known it's a standard transaction, use regular money textures
 		BuyEmAllCurrency3:SetTexture("Interface\\MONEYFRAME\\UI-CopperIcon");
 
 		
 		-- Modified to check for free items. Mostly for the PTR/Beta servers, but it shouldn't hurt to leave it in.
+		-- Put after the alternate currency trigger to prevent issues. Always had it here, just adding the note.
 		if self.price == 0 then
 			self.afford = self.fit;
 		else
