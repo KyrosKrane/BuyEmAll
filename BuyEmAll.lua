@@ -22,8 +22,8 @@ function BuyEmAll:OnLoad()
 	}
 	if BEAConfirmToggle == nil then BEAConfirmToggle = 1 end
 	self.OrigMerchantItemButton_OnModifiedClick = MerchantItemButton_OnModifiedClick
-	MerchantItemButton_OnModifiedClick = function(...)
-		self:MerchantItemButton_OnModifiedClick(this, ...)
+	MerchantItemButton_OnModifiedClick = function(frame, button)
+		self:MerchantItemButton_OnModifiedClick(frame, button)
 	end
 	
 	self.OrigMerchantFrame_OnHide = MerchantFrame:GetScript("OnHide")
@@ -72,7 +72,7 @@ end
 --[[
 Hooks left-clicks on merchant item buttons
 ]]
-function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
+function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 	if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()))
 	elseif MerchantFrame.selectedTab == 1
 	   and IsShiftKeyDown()
@@ -115,7 +115,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 		
 		self:Show(frame)
 	else
-		self.OrigMerchantItemButton_OnModifiedClick(frame, button, ...)
+		self.OrigMerchantItemButton_OnModifiedClick(frame, button)
 	end
 end
 
