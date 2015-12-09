@@ -70,6 +70,7 @@ function BuyEmAll:MerchantItemButton_OnClick(button, ignoreModifiers)
        and not IsControlKeyDown()
        and not ignoreModifiers
        and not (ChatFrameEditBox:IsVisible() and button == "LeftButton") then
+	   
         -- Set up various data before showing the BuyEmAll frame
         self.itemIndex = this:GetID()
 
@@ -99,8 +100,14 @@ function BuyEmAll:MerchantItemButton_OnClick(button, ignoreModifiers)
         specialMax = floor(specialMax / quantity) * quantity
         self.defaultStack =
             specialMax > 0 and specialMax <= self.max and specialMax or quantity
-        
+		
+		self.split = self.defaultStack
+		
+		self.partialFit = mod(self.fit, stack)
+		self:SetStackClick()
+		
         self:Show()
+		
     else
         self.hooks.MerchantItemButton_OnClick.orig(button, ignoreModifiers)
     end
@@ -113,13 +120,12 @@ end
 Prepare the various UI elements of the BuyEmAll frame and show it
 ]]
 function BuyEmAll:Show()
-    self.split = self.defaultStack
 	self.typing = 0
 	BuyEmAllLeftButton:Disable()
 	BuyEmAllRightButton:Enable()
  
     BuyEmAllStackButton:Enable()
-    if self.max < self.stack or self.stack == self.preset then
+    if self.max < self.stackClick then
         BuyEmAllStackButton:Disable()
     end
 
@@ -187,20 +193,37 @@ Changes the money display to however much amount of the item will cost. If
 amount is not specified, it uses the current split value.
 ]]
 function BuyEmAll:UpdateDisplay(amount)
-    local purchase = ceil((amount and amount or self.split) / self.preset)
-    local cost = purchase * self.price
-    
-    MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
-	if not amount then
-        BuyEmAllText:SetText(self.split)
-        BuyEmAllLeftButton:Enable()
-        BuyEmAllRightButton:Enable()
-        if self.split == self.max then
-            BuyEmAllRightButton:Disable()
-        elseif self.split <= self.preset then
-            BuyEmAllLeftButton:Disable()
-        end
-    end
+	
+	local purchase = ceil((amount and amount or self.split) / self.preset)
+	local cost = purchase * self.price
+	MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
+	
+	--[[ Amount is only used for previewing when hovering over the buttons.
+	the folowing code will only execute when the purchase amount is actually
+	changed. ]]
+	if not amount and not self.isUpdating then
+		self.isUpdating = true
+		--[[ This wrapper is kind of a hack... Calling :Enable() or :Disable() on
+		the	Stack button triggers certain events which call UpdateDisplay causing a
+		stack overflow, hence the isUpdating flag]]
+		
+		BuyEmAllText:SetText(self.split)
+		BuyEmAllLeftButton:Enable()
+		BuyEmAllRightButton:Enable()
+		if self.split == self.max then
+			BuyEmAllRightButton:Disable()
+		elseif self.split <= self.preset then
+			BuyEmAllLeftButton:Disable()
+		end
+		
+		self:SetStackClick()
+		BuyEmAllStackButton:Enable()
+		if self.max < self.stackClick then
+			BuyEmAllStackButton:Disable()
+		end
+		
+		self.isUpdating = nil
+	end
 end
 
 
@@ -218,6 +241,17 @@ end
 
 
 --[[
+Calculates the amount that the Stack button will enter
+]]
+function BuyEmAll:SetStackClick()
+	local increase = self.partialFit - mod(self.split, self.stack)
+	self.stackClick = self.split + (increase == 0 and self.stack or increase)
+end
+
+
+
+
+--[[
 OnClick handler for the four main buttons
 ]]
 function BuyEmAll:OnClick()
@@ -226,8 +260,13 @@ function BuyEmAll:OnClick()
     elseif this == BuyEmAllCancelButton then
         BuyEmAllFrame:Hide()
     elseif this == BuyEmAllStackButton then
-        self.split = self.stack
+        self.split = self.stackClick
         self:UpdateDisplay()
+		if this:IsEnabled() == 1 then
+			self:OnEnter()
+		else
+			GameTooltip:Hide()
+		end
     elseif this == BuyEmAllMaxButton then
         self.split = self.max
         self:UpdateDisplay()
@@ -342,54 +381,69 @@ end
 
 
 --[[
+This table is used for the two functions that follow
+]]
+BuyEmAll.lines = {
+	stack = {
+		label = L"Stack purchase",
+		field = "stackClick",
+		{ label = L"Stack size", field = "stack" },
+		{ label = L"Partial stack", field = "partialFit" },
+	},
+	max = {
+		label = L"Maximum purchase",
+		field = "max",
+		{ label = L"You can afford", field = "fit" },
+		{ label = L"You can fit", field = "afford" },
+		{
+			label = L"Vendor has", 
+			field = "available",
+			Hide = function()
+				return BuyEmAll.available <= 1
+			end
+		},
+	},
+}
+
+
+
+
+--[[
 Shows tooltips when you hover over the Stack or Max buttons
 ]]
 function BuyEmAll:OnEnter()
-    local cost, label, amount
-    local lines = {}
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")--, -BuyEmAllFrame:GetWidth() + 5, 5)
-    
-    if this == BuyEmAllStackButton then
-        cost = self.stack
-        label = L"Stack size"
-        amount = self.stack
-    else--if this == BuyEmAllMaxButton then   -- don't need to compare since it's the only other option
-        cost = self.max
-        label = L"Maximum purchase"
-        amount = self.max
-        lines = {{ L"You can fit", self.fit },
-                 { L"You can afford", self.afford }}
-        if self.available > 1 then
-            table.insert(lines, { L"Vendor has", self.available })
-        end
-    end
-    
-    GameTooltip:SetText(label..
-                        "|cFFFFFFFF - |r"..
-                        GREEN_FONT_COLOR_CODE..
-                        amount..
-                        "|r"
-    )
-    for _, line in lines do
-        self:AddTooltipLine(line)
-    end
-    self:UpdateDisplay(amount)
-    GameTooltip:Show()
+    local lines = self.lines[this == BuyEmAllMaxButton and "max" or "stack"]
+	
+	lines.amount = self[lines.field]
+	for i, line in ipairs(lines) do
+		line.amount = self[line.field]
+	end
+        
+	self:CreateTooltip(lines)
+	
+    self:UpdateDisplay(lines.amount)
 end
 
 
 
 
 --[[
-Adds a line to the tooltip. line[1] is the label and will be left-justified.
-line[2] is a number and will be right-justified. All the text will be white
-unless the number is equal to the maximum purchase, in which case the number
-will be green.
+Creates the tooltip from the given lines table. See the structure of lines above for
+more insight.
 ]]
-function BuyEmAll:AddTooltipLine(line)
-    local color = 
-        line[2] == self.max and GREEN_FONT_COLOR or HIGHLIGHT_FONT_COLOR
-    GameTooltip:AddDoubleLine(line[1], line[2], 1,1,1, color.r,color.g,color.b)
+function BuyEmAll:CreateTooltip(lines)
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetText(lines.label.."|cFFFFFFFF - |r"..GREEN_FONT_COLOR_CODE..lines.amount.."|r")
+
+	for _, line in ipairs(lines) do
+		if not (line.Hide and line.Hide()) then
+			local color = 
+				line.amount == lines.amount and GREEN_FONT_COLOR or HIGHLIGHT_FONT_COLOR
+			GameTooltip:AddDoubleLine(line.label, line.amount, 1,1,1, color.r,color.g,color.b)
+		end
+	end
+	
+    GameTooltip:Show()
 end
 
 
@@ -413,13 +467,6 @@ response.
 function BuyEmAll:OnHide()
     StaticPopup_Hide("BUYEMALL_CONFIRM")
 end
-
-
-
-
---[[
-Utility functions. Thes could easily be used in other projects.
-]]
 
 
 
