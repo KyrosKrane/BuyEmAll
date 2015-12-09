@@ -1,4 +1,7 @@
-﻿v3.1.6
+﻿v3.1.7
+Updated alternate currency support.
+
+v3.1.6
 No known issues, TOC bump.
 
 v3.1.5

@@ -307,6 +307,10 @@ function BuyEmAll:AltCurrencyTranslating(Texture)
 		return 614;
 	elseif (strmatch(Texture, "%a+_%a+$") == "primal_shadow") then
 		return 615;
+	elseif (strmatch(Texture, "%a+_%d+$") == "coin_17") then
+		return 697;
+	elseif (strmatch(Texture, "%a+_%d+$") == "coin_18") then
+		return 738;
 	end
 end
 
