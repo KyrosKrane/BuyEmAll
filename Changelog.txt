@@ -1,4 +1,7 @@
-﻿v3.1.5
+﻿v3.1.6
+No known issues, TOC bump.
+
+v3.1.5
 No known issues, TOC bump.
 
 v3.1.4
