@@ -1,17 +1,17 @@
 --[[
 Name: AceOO-2.0
-Revision: $Rev: 5033 $
-Author(s): ckknight (ckknight@gmail.com)
-           kergoth (kergoth@handhelds.org)
+Revision: $Rev: 10447 $
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceOO-2.0
+Documentation: http://www.wowace.com/index.php/AceOO-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
 Dependencies: AceLibrary, Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceOO-2.0"
-local MINOR_VERSION = "$Revision: 5033 $"
+local MINOR_VERSION = "$Revision: 10447 $"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
@@ -322,16 +322,13 @@ local function traverseInterfaces(bit, total)
 		end
 	end
 end
+local class_new
 do
 	Class = Factory(Object, setmetatable({}, {__index = Object}), Object)
 	Class.super = Object
 	
 	local function protostring(t)
-		if t.ToString then
-			return t:ToString()
-		else
-			return '<' .. tostring(t.class) .. ' prototype>'
-		end
+		return '<' .. tostring(t.class) .. ' prototype>'
 	end
 	local function classobjectstring(t)
 		if t.ToString then
@@ -657,8 +654,12 @@ local ClassFactory = Factory(Object, Class, Object)
 
 function Class:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 					a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	return ClassFactory:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+	local x = ClassFactory:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 							a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if AceOO.classes then
+		AceOO.classes[x] = true
+	end
+	return x
 end
 getmetatable(Class).__call = Class.new
 
@@ -714,9 +715,10 @@ do
 		local mt = getmetatable(target)
 		setmetatable(target, nil)
 		local err, msg = pcall(_Embed, self, nil, target)
-		setmetatable(target, mt)
 		if not err then
+			setmetatable(target, mt)
 			AceOO:error(msg)
+			return
 		end
 		if type(self.embedList) == "table" then
 			self.embedList[target] = true
@@ -727,6 +729,7 @@ do
 		if not autoEmbed and type(self.OnManualEmbed) == "function" then
 			self:OnManualEmbed(target)
 		end
+		setmetatable(target, mt)
 	end
 	
 	function Mixin.prototype:activate(oldLib, oldDeactivate)
@@ -877,7 +880,10 @@ local Classpool
 do
 	local pool = setmetatable({}, {__mode = 'v'})
 	local function newindex(k, v)
-		AceOO:error('Attempt to modify a read only class.')
+		AceOO:error('Attempt to modify a read-only class.')
+	end
+	local function protonewindex(k, v)
+		AceOO:error('Attempt to modify a read-only class prototype.')
 	end
 	local function ts(bit)
 		if type(bit) ~= "table" then
@@ -950,7 +956,7 @@ do
 			-- but it's likely that only a truly malicious user will be doing so.
 			class.sealed = true
 			setmetatable(class, classmeta)
-			getmetatable(class.prototype).__newindex = newindex
+			getmetatable(class.prototype).__newindex = protonewindex
 			pool[key] = class
 		end
 		return pool[key]
@@ -976,6 +982,18 @@ local function activate(self, oldLib, oldDeactivate)
 	Mixin = self.Mixin
 	Interface = self.Interface
 	Classpool = self.Classpool
+	
+	if oldLib then
+		self.classes = oldLib.classes
+	end
+	if not self.classes then
+		self.classes = setmetatable({}, {__mode="k"})
+	else
+		for class in pairs(self.classes) do
+			class.new = class_new
+		end
+	end
+	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end

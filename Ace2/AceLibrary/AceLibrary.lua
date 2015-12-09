@@ -1,12 +1,12 @@
 --[[
 Name: AceLibrary
-Revision: $Rev: 7540 $
-Author(s): ckknight (ckknight@gmail.com)
-           cladhaire (cladhaire@gmail.com)
+Revision: $Rev: 10447 $
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Iriel (iriel@vigilance-committee.org)
              Tekkub (tekkub@gmail.com)
+             Revision: $Rev: 10447 $
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceLibrary
+Documentation: http://www.wowace.com/index.php/AceLibrary
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceLibrary
 Description: Versioning library to handle other library instances, upgrading,
              and proper access.
@@ -17,7 +17,7 @@ Dependencies: None
 ]]
 
 local ACELIBRARY_MAJOR = "AceLibrary"
-local ACELIBRARY_MINOR = "$Revision: 7540 $"
+local ACELIBRARY_MINOR = "$Revision: 10447 $"
 
 -- CHANGE DEBUG TO ``false`` ON RELEASE -------------------
 local DEBUG = true
@@ -80,9 +80,9 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	
 	if getmetatable(self) and getmetatable(self).__tostring then
 		message = string.format("%s: %s", tostring(self), message)
-	elseif type(self.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
+	elseif type(rawget(self, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
 		message = string.format("%s: %s", self:GetLibraryVersion(), message)
-	elseif type(self.class) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
+	elseif type(rawget(self, 'class')) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
 		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
 	end
 	
@@ -163,21 +163,21 @@ end
 local recurse = {}
 local function addToPositions(t, major)
 	if not AceLibrary.positions[t] or AceLibrary.positions[t] == major then
-		t[recurse] = true
+		rawset(t, recurse, true)
 		AceLibrary.positions[t] = major
 		for k,v in pairs(t) do
-			if type(v) == "table" and not v[recurse] then
+			if type(v) == "table" and not rawget(v, recurse) then
 				addToPositions(v, major)
 			end
-			if type(k) == "table" and not k[recurse] then
+			if type(k) == "table" and not rawget(k, recurse) then
 				addToPositions(k, major)
 			end
 		end
 		local mt = getmetatable(t)
-		if mt and not mt[recurse] then
+		if mt and not rawget(mt, recurse) then
 			addToPositions(mt, major)
 		end
-		t[recurse] = nil
+		rawset(t, recurse, nil)
 	end
 end
 
@@ -206,7 +206,8 @@ do
 		recurse[t] = true
 		local mt = getmetatable(t)
 		setmetatable(t, nil)
-		t[from], t[to] = nil, t[from]
+		rawset(t, to, rawget(t, from))
+		rawset(t, from, nil)
 		for k,v in pairs(t) do
 			if v == from then
 				t[k] = to
@@ -249,7 +250,7 @@ local function destroyTable(t)
 end
 
 local function isFrame(frame)
-	return type(frame) == "table" and type(frame[0]) == "userdata" and type(frame.IsFrameType) == "function" and getmetatable(frame) and type(getmetatable(frame).__index) == "function"
+	return type(frame) == "table" and type(rawget(frame, 0)) == "userdata" and type(rawget(frame, 'IsFrameType')) == "function" and getmetatable(frame) and type(rawget(getmetatable(frame), '__index')) == "function"
 end
 
 local new, del
@@ -285,7 +286,7 @@ end
 -- @return     A shallow copy of the table
 local function copyTable(from)
 	local to = new()
-	for k,v in pairs(from) do to[k]=v end
+	for k,v in pairs(from) do to[k] = v end
 	table.setn(to, table.getn(from))
 	setmetatable(to, getmetatable(from))
 	return to
@@ -310,8 +311,8 @@ do
 	-- @param list An account of the table references
 	local function examine(to, from, list, major)
 		list[from] = to
-		for k in pairs(from) do
-			if to[k] and type(from[k]) == "table" and type(to[k]) == "table" and not list[from[k]] then
+		for k,v in pairs(from) do
+			if rawget(to, k) and type(from[k]) == "table" and type(to[k]) == "table" and not list[from[k]] then
 				if from[k] == to[k] then
 					list[from[k]] = to[k]
 				elseif AceLibrary.positions[from[v]] ~= major and AceLibrary.positions[from[v]] then
@@ -335,7 +336,7 @@ do
 		end
 		list2[to] = to
 		for k,v in pairs(to) do
-			if type(from[k]) ~= "table" or type(v) ~= "table" or isFrame(v) then
+			if type(rawget(from, k)) ~= "table" or type(v) ~= "table" or isFrame(v) then
 				if saveFields then
 					saveFields[k] = v
 				end
@@ -347,13 +348,13 @@ do
 			end
 		end
 		for k in pairs(from) do
-			if to[k] and to[k] ~= from[k] and AceLibrary.positions[to[k]] == major and from[k] ~= _G then
+			if rawget(to, k) and to[k] ~= from[k] and AceLibrary.positions[to[k]] == major and from[k] ~= _G then
 				if not list2[to[k]] then
 					deepTransfer(to[k], from[k], nil, major, list, list2)
 				end
 				to[k] = list[to[k]] or list2[to[k]]
 			else
-				to[k] = from[k]
+				rawset(to, k, from[k])
 			end
 		end
 		table.setn(to, table.getn(from))
@@ -517,20 +518,20 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 			deactivateFunc = deactivateFunc,
 			externalFunc = externalFunc,
 		}
-		function instance:GetLibraryVersion()
+		rawset(instance, 'GetLibraryVersion', function(self)
 			return major, minor
+		end)
+		if not rawget(instance, 'error') then
+			rawset(instance, 'error', error)
 		end
-		if not instance.error then
-			instance.error = error
+		if not rawget(instance, 'assert') then
+			rawset(instance, 'assert', assert)
 		end
-		if not instance.assert then
-			instance.assert = assert
+		if not rawget(instance, 'argCheck') then
+			rawset(instance, 'argCheck', argCheck)
 		end
-		if not instance.argCheck then
-			instance.argCheck = argCheck
-		end
-		if not instance.pcall then
-			instance.pcall = pcall
+		if not rawget(instance, 'pcall') then
+			rawset(instance, 'pcall', pcall)
 		end
 		addToPositions(instance, major)
 		if activateFunc then
@@ -594,36 +595,36 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	data.minor = minor
 	data.deactivateFunc = deactivateFunc
 	data.externalFunc = externalFunc
-	function instance:GetLibraryVersion()
+	rawset(instance, 'GetLibraryVersion', function(self)
 		return major, minor
+	end)
+	if not rawget(instance, 'error') then
+		rawset(instance, 'error', error)
 	end
-	if not instance.error then
-		instance.error = error
+	if not rawget(instance, 'assert') then
+		rawset(instance, 'assert', assert)
 	end
-	if not instance.assert then
-		instance.assert = assert
+	if not rawget(instance, 'argCheck') then
+		rawset(instance, 'argCheck', argCheck)
 	end
-	if not instance.argCheck then
-		instance.argCheck = argCheck
-	end
-	if not instance.pcall then
-		instance.pcall = pcall
+	if not rawget(instance, 'pcall') then
+		rawset(instance, 'pcall', pcall)
 	end
 	if isAceLibrary then
 		for _,v in pairs(self.libs) do
 			local i = type(v) == "table" and v.instance
 			if type(i) == "table" then
-				if i.error == old_error or not i.error then
-					i.error = error
+				if not rawget(i, 'error') or i.error == old_error then
+					rawset(i, 'error', error)
 				end
-				if i.assert == old_assert or not i.assert then
-					i.assert = assert
+				if not rawget(i, 'assert') or i.assert == old_assert then
+					rawset(i, 'assert', assert)
 				end
-				if i.argCheck == old_argCheck or not i.argCheck then
-					i.argCheck = argCheck
+				if not rawget(i, 'argCheck') or i.argCheck == old_argCheck then
+					rawset(i, 'argCheck', argCheck)
 				end
-				if i.pcall == old_pcall or not i.pcall then
-					i.pcall = pcall
+				if not rawget(i, 'pcall') or i.pcall == old_pcall then
+					rawset(i, 'pcall', pcall)
 				end
 			end
 		end

@@ -4,7 +4,7 @@
 BuyEmAll = AceLibrary("AceAddon-2.0"):new("AceHook-2.0")
 
 -- Localize
-local L = AceLibrary("AceLocale-2.0"):new("BuyEmAll")
+local L = AceLibrary("AceLocale-2.1"):GetInstance("BuyEmAll", true)
 
 -- These are used for the text on the Max and Stack buttons. See BuyEmAll.xml.
 BUYEMALL_MAX = L"Max"
@@ -29,7 +29,7 @@ function BuyEmAll:OnEnable()
     self:Hook("MerchantItemButton_OnClick")
     self:HookScript(MerchantFrame, "OnHide", "MerchantFrame_OnHide")
     
-    DEFAULT_CHAT_FRAME:AddMessage("BuyEmAll - By Cogwheel\nInspired by Tanao of Llane")
+    DEFAULT_CHAT_FRAME:AddMessage("BuyEmAll - By Cogwheel\nInspired by Shadowglen of Llane")
 end
 
 

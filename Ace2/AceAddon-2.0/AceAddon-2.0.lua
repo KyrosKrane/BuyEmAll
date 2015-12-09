@@ -1,17 +1,17 @@
 --[[
 Name: AceAddon-2.0
-Revision: $Rev: 7033 $
-Author(s): ckknight (ckknight@gmail.com)
-Inspired By: Ace 1.x by Turan (<email here>)
+Revision: $Rev: 10447 $
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceAddon-2.0
+Documentation: http://www.wowace.com/index.php/AceAddon-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceAddon-2.0
 Description: Base for all Ace addons to inherit from.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
 ]]
 
 local MAJOR_VERSION = "AceAddon-2.0"
-local MINOR_VERSION = "$Revision: 7033 $"
+local MINOR_VERSION = "$Revision: 10447 $"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
@@ -144,6 +144,13 @@ local function RegisterOnEnable(self)
 	end
 end
 
+local function stripSpaces(text)
+	if type(text) == "string" then
+		return (string.gsub(string.gsub(text, "^%s*(.-)%s*$", "%1"), "%s%s+", " "))
+	end
+	return text
+end
+
 function AceAddon:InitializeAddon(addon, name)
 	if addon.name == nil then
 		addon.name = name
@@ -157,10 +164,12 @@ function AceAddon:InitializeAddon(addon, name)
 				if num then
 					addon.title = string.sub(addon.title, 1, num - 1)
 				end
+				addon.title = stripSpaces(addon.title)
 			end
 		end
 		if addon.notes == nil then
 			addon.notes = GetAddOnMetadata(name, "Notes")
+			addon.notes = stripSpaces(addon.notes)
 		end
 		if addon.version == nil then
 			addon.version = GetAddOnMetadata(name, "Version")
@@ -173,9 +182,11 @@ function AceAddon:InitializeAddon(addon, name)
 					addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
 				end
 			end
+			addon.version = stripSpaces(addon.version)
 		end
 		if addon.author == nil then
 			addon.author = GetAddOnMetadata(name, "Author")
+			addon.author = stripSpaces(addon.author)
 		end
 		if addon.date == nil then
 			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
@@ -186,15 +197,19 @@ function AceAddon:InitializeAddon(addon, name)
 					addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
 				end
 			end
+			addon.date = stripSpaces(addon.date)
 		end
 		if addon.category == nil then
 			addon.category = GetAddOnMetadata(name, "X-Category")
+			addon.category = stripSpaces(addon.category)
 		end
 		if addon.email == nil then
 			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
+			addon.email = stripSpaces(addon.email)
 		end
 		if addon.website == nil then
 			addon.website = GetAddOnMetadata(name, "X-Website")
+			addon.website = stripSpaces(addon.website)
 		end
 	end
 	local current = addon.class

@@ -1,18 +1,17 @@
 --[[
 Name: AceHook-2.0
-Revision: $Rev: 7464 $
-Author(s): cladhaire (cladhaire@gmail.com)
-           ckknight (ckknight@gmail.com)
-Inspired By: AceHook 1.x by Turan (<email here>)
+Revision: $Rev: 10447 $
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceHook-2.0
+Documentation: http://www.wowace.com/index.php/AceHook-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceHook-2.0
 Description: Mixin to allow for safe hooking of functions, methods, and scripts.
 Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceHook-2.0"
-local MINOR_VERSION = "$Revision: 7464 $"
+local MINOR_VERSION = "$Revision: 10447 $"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
@@ -55,6 +54,8 @@ local protFuncs = {
 
 local _G = getfenv(0)
 
+local handlers, funcs, scripts, actives
+
 --[[---------------------------------------------------------------------------------
   Private definitions (Not exposed)
 ----------------------------------------------------------------------------------]]
@@ -74,8 +75,6 @@ local function _debug(self, msg)
 		print(msg)
 	end		
 end
-
-local donothing
 
 local new, del
 do
@@ -99,27 +98,32 @@ do
 	end
 end
 
+local origMetatable = {
+	__call = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+		return self.orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	end
+}
+
 --[[----------------------------------------------------------------------
 	AceHook:_getFunctionHook- internal method
 -------------------------------------------------------------------------]]		
 
-local function _getFunctionHook(self, func, handler)
-	local orig = self.hooks[func].orig
+local function _getFunctionHook(self, func, handler, orig)
 	if type(handler) == "string" then
 		-- The handler is a method, need to self it
 		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			if self.hooks and self.hooks[func] and self.hooks[func].active then
+			if actives[orig] then
 				return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			elseif orig then
+			else
 				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			end
 		end
 	else
 		-- The handler is a function, just call it
 		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			if self.hooks and self.hooks[func] and self.hooks[func].active then
+			if actives[orig] then
 				return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			elseif orig then
+			else
 				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			end
 		end
@@ -129,24 +133,23 @@ end
 --[[----------------------------------------------------------------------
 	AceHook:_getMethodHook - Internal Method
 -------------------------------------------------------------------------]]		
-local function _getMethodHook(self, object, method, handler, script)
-	local orig = self.hooks[object][method].orig
+local function _getMethodHook(self, object, method, handler, orig, script)
 	if type(handler) == "string" then
 		-- The handler is a method, need to self it
 		if script then
 			return function()
-				if self.hooks and self.hooks[object] and self.hooks[object][method] and self.hooks[object][method].active then
+				if actives[orig] then
 					return self[handler](self, object)
-				elseif orig then
+				else
 					return orig()
 				end
 			end
 		else
 			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if self.hooks and self.hooks[obj] and self.hooks[obj][method] and self.hooks[obj][method].active then
+				if actives[orig] then
 					return self[handler](self, obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				elseif orig then
-					return orig(object, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				else
+					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 				end
 			end
 		end
@@ -154,18 +157,18 @@ local function _getMethodHook(self, object, method, handler, script)
 		-- The handler is a function, just call it
 		if script then
 			return function()
-				if self.hooks and self.hooks[object] and self.hooks[object][method] and self.hooks[object][method].active then
+				if actives[orig] then
 					return handler(object)
-				elseif orig then
+				else
 					return orig()
 				end
 			end
 		else
 			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if self.hooks and self.hooks[obj] and self.hooks[obj][method] and self.hooks[obj][method].active then
+				if actives[orig] then
 					return handler(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				elseif orig then
-					return orig(object, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				else
+					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 				end
 			end	
 		end
@@ -181,9 +184,9 @@ end
 	o If handler is a function, it just uses it directly through the wrapper
 -------------------------------------------------------------------------]]		
 local function _hookFunc(self, func, handler)						
-	local f = _G[func]
+	local orig = _G[func]
 	
-	if not f or type(f) ~= "function" then
+	if not orig or type(orig) ~= "function" then
 		_debug(self, string.format("Attempt to hook a non-existant function %q", func),3)
 		return
 	end
@@ -191,14 +194,15 @@ local function _hookFunc(self, func, handler)
 	if not handler then handler = func end
 
 	if self.hooks[func] then
+		local orig = self.hooks[func].orig
 		-- We have an active hook from this source.  Don't multi-hook
-		if self.hooks[func].active then
+		if actives[orig] then
 			_debug(self, string.format("%q already has an active hook from this source.", func))
 			return
 		end
 		-- The hook is inactive, so reactivate it
-		if self.hooks[func].handler == handler then
-			self.hooks[func].active = true
+		if handlers[orig] == handler then
+			actives[orig] = true
 			return
 		else
 			AceHook:error("There is a stale hook for %q can't hook or reactivate.", func)
@@ -213,14 +217,16 @@ local function _hookFunc(self, func, handler)
 		AceHook:error("Could not find the handler you supplied when hooking %q", func)
 	end
 	
-	local t = new()
+	local t = setmetatable(new(), origMetatable)
 	self.hooks[func] = t
-	t.orig = f
-	t.active = true
-	t.handler = handler
-	t.func = _getFunctionHook(self, func, handler)
+	t.orig = orig
 	
-	_G[func] = t.func
+	actives[orig] = true
+	handlers[orig] = handler
+	local newFunc = _getFunctionHook(self, func, handler, orig)
+	funcs[orig] = newFunc
+	
+	_G[func] = newFunc
 end
 
 --[[----------------------------------------------------------------------
@@ -233,19 +239,25 @@ end
 	  forcing the handler to passthrough.
 -------------------------------------------------------------------------]]		
 local function _unhookFunc(self, func)
-	if not self.hooks[func] then
+	if not self.hooks[func] or not funcs[self.hooks[func].orig] then
 		_debug(self, string.format("Tried to unhook %q which is not currently hooked.", func))
 		return
 	end
-	if self.hooks[func].active then
+	
+	local orig = self.hooks[func].orig
+	
+	if actives[orig] then
 		-- See if we own the global function
-		if _G[func] == self.hooks[func].func then
-			_G[func] = self.hooks[func].orig
-			del(self.hooks[func])
-			self.hooks[func] = nil
+		if _G[func] == funcs[orig] then
+			_G[func] = orig
+			self.hooks[func] = del(self.hooks[func])
+			handlers[orig] = nil
+			funcs[orig] = nil
+			scripts[orig] = nil
+			actives[orig] = nil
 			-- Magically all-done
 		else
-			self.hooks[func].active = nil
+			actives[orig] = nil
 		end
 	end
 end
@@ -262,14 +274,15 @@ local function _hookMeth(self, obj, method, handler, script)
 	end
 	
 	if self.hooks[obj] and self.hooks[obj][method] then
+		local orig = self.hooks[obj][method].orig
 		-- We have an active hook from this source.  Don't multi-hook
-		if self.hooks[obj][method].active then
+		if actives[orig] then
 			_debug(self, string.format("%q already has an active hook from this source.", method))
 			return
 		end
 		-- The hook is inactive, so reactivate it.
-		if self.hooks[obj][method].handler == handler then
-			self.hooks[obj][method].active = true
+		if handlers[orig] == handler then
+			actives[orig] = true
 			return
 		else
 			AceHook:error("There is a stale hook for %q can't hook or reactivate.", method)
@@ -296,10 +309,7 @@ local function _hookMeth(self, obj, method, handler, script)
 		-- Sometimes there is not a original function for a script.
 		orig = obj:GetScript(method)
 		if not orig then
-			if not donothing then
-				function donothing() end
-			end
-			orig = donothing
+			orig = function() end
 		end
 	-- Method
 	else
@@ -311,18 +321,20 @@ local function _hookMeth(self, obj, method, handler, script)
 	if not self.hooks[obj] then
 		self.hooks[obj] = new()
 	end
-	local t = new()
+	local t = setmetatable(new(), origMetatable)
 	self.hooks[obj][method] = t
 	t.orig = orig
-	t.active = true
-	t.handler = handler
-	t.script = script
-	t.func = _getMethodHook(self, obj, method, handler, script)
+	
+	actives[orig] = true
+	handlers[orig] = handler
+	scripts[orig] = script and true or nil
+	local newFunc = _getMethodHook(self, obj, method, handler, orig, script)
+	funcs[orig] = newFunc
 	
 	if script then
-		obj:SetScript(method, t.func)
+		obj:SetScript(method, newFunc)
 	else
-		obj[method] = t.func
+		obj[method] = newFunc
 	end
 end	
 
@@ -336,36 +348,44 @@ end
 	  forcing the handler to passthrough.
 -------------------------------------------------------------------------]]		
 local function _unhookMeth(self, obj, method)
-	if not self.hooks[obj] or not self.hooks[obj][method] then
+	if not self.hooks[obj] or not self.hooks[obj][method] or not funcs[self.hooks[obj][method].orig] then
 		_debug(self, string.format("Attempt to unhook a method %q that is not currently hooked.", method))
 		return
 	end
-	if self.hooks[obj][method].active then
+	
+	local orig = self.hooks[obj][method].orig
+	
+	if actives[orig] then
 		-- If this is a script
-		if self.hooks[obj][method].script then
-			if obj:GetScript(method) == self.hooks[obj][method].func then
+		if scripts[orig] then
+			if obj:GetScript(method) == funcs[orig] then
 				-- We own the script.  Kill it.
-				obj:SetScript(method, self.hooks[obj][method].orig)
-				del(self.hooks[obj][method])
-				self.hooks[obj][method] = nil
+				obj:SetScript(method, orig)
+				self.hooks[obj][method] = del(self.hooks[obj][method])
+				handlers[orig] = nil
+				funcs[orig] = nil
+				scripts[orig] = nil
+				actives[orig] = nil
 			else
-				self.hooks[obj][method].active = nil
+				actives[orig] = nil
 			end
 		else
-			if obj[method] == self.hooks[obj][method].func then
+			if obj[method] == funcs[orig] then
 				-- We own the method.  Kill it.
-				obj[method] = self.hooks[obj][method].orig
-				del(self.hooks[obj][method])
-				self.hooks[obj][method] = nil
+				obj[method] = orig
+				self.hooks[obj][method] = del(self.hooks[obj][method])
+				handlers[orig] = nil
+				funcs[orig] = nil
+				scripts[orig] = nil
+				actives[orig] = nil
 			else
-				self.hooks[obj][method].active = nil
+				actives[orig] = nil
 			end
 		end
 	end
 	if not next(self.hooks[obj]) then
 		-- Spank the table
-		del(self.hooks[obj])
-		self.hooks[obj] = nil
+		self.hooks[obj] = del(self.hooks[obj])
 	end
 end
 
@@ -435,12 +455,12 @@ end
 -------------------------------------------------------------------------]]		
 function AceHook:IsHooked(obj, method)
 	if method and obj then
-		if self.hooks and self.hooks[obj] and self.hooks[obj][method] and self.hooks[obj][method].active then
-			return true, self.hooks[obj][method].handler
+		if self.hooks and self.hooks[obj] and self.hooks[obj][method] and actives[self.hooks[obj][method].orig] then
+			return true, handlers[self.hooks[obj][method].orig]
 		end
 	else
-		if self.hooks and self.hooks[obj] and self.hooks[obj].active then
-			return true, self.hooks[obj].handler
+		if self.hooks and self.hooks[obj] and actives[self.hooks[obj].orig] then
+			return true, handlers[self.hooks[obj].orig]
 		end
 	end
 	
@@ -503,11 +523,39 @@ end
   Stub and Library registration
 ----------------------------------------------------------------------------------]]
 
-function AceHook:activate(oldLib, oldDeactivate)
-	AceHook = AceLibrary(MAJOR_VERSION)
+local function activate(self, oldLib, oldDeactivate)
+	AceHook = self
 	
 	AceHook.super.activate(self, oldLib, oldDeactivate)
+	
+	if oldLib then
+		self.handlers = oldLib.handlers
+		self.funcs = oldLib.funcs
+		self.scripts = oldLib.scripts
+		self.actives = oldLib.actives
+	end
+	
+	if not self.handlers then
+		self.handlers = {}
+	end
+	if not self.funcs then
+		self.funcs = {}
+	end
+	if not self.scripts then
+		self.scripts = {}
+	end
+	if not self.actives then
+		self.actives = {}
+	end
+	
+	handlers = self.handlers
+	funcs = self.funcs
+	scripts = self.scripts
+	actives = self.actives
+	
+	if oldDeactivate then
+		oldDeactivate(oldLib)
+	end
 end
 
-AceLibrary:Register(AceHook, MAJOR_VERSION, MINOR_VERSION, AceHook.activate)
-AceHook = AceLibrary(MAJOR_VERSION)
+AceLibrary:Register(AceHook, MAJOR_VERSION, MINOR_VERSION, activate)

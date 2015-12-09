@@ -1,4 +1,4 @@
-BuyEmAll - v2.1
+BuyEmAll - v2.1.1
 
 By Cogwheel
 
@@ -64,6 +64,11 @@ Please visit Cogwheel's Workshop at http://cogwheel.wowinterface.com if you have
 
 
 ---------- CHANGES ----------
+
+v2.1.1
+
+- Updated TOC for patch 1.12
+- Updated Ace2 libraries
 
 v2.1
 
