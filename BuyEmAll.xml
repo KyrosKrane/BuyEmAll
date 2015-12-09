@@ -3,7 +3,7 @@
     <Script file="BuyEmAll.lua" />
 	<Frame name="BuyEmAllFrame" frameStrata="HIGH" parent="UIParent" toplevel="true" enableMouse="true" enableKeyboard="true" hidden="true">
 		<Size>
-			<AbsDimension x="172" y="112"/>
+			<AbsDimension x="172" y="128"/>
 		</Size>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -11,22 +11,49 @@
 					<Size>
 						<AbsDimension x="256" y="32"/>
 					</Size>
-					<TexCoords left="0" right="0.671875" top="0" bottom="0.9"/>
+					<TexCoords left="0" right="0.671875" top="0" bottom="1"/>
 				</Texture>
 				<FontString name="BuyEmAllText" inherits="GameFontHighlight" justifyH="RIGHT">
 					<Anchors>
-						<Anchor point="RIGHT">
+						<Anchor point="TOPRIGHT">
 							<Offset>
-								<AbsDimension x="-50" y="28"/>
+								<AbsDimension x="-50" y="-23"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
 				</FontString>
-                <FontString name="BuyEmAllMaxText" inherits="GameFontHighlight">
+                <FontString name="BuyEmAllCostLabel" inherits="GameFontNormal">
                     <Anchors>
-                        <Anchor point="LEFT" relativePoint="TOPLEFT">
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT">
                             <Offset>
-                                <AbsDimension x="20" y="-55"/>
+                                <AbsDimension x="17" y="-51"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="BuyEmAllCostText" inherits="NumberFontNormal" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="LEFT" relativeTo="BuyEmAllCostLabel">
+                            <Offset>
+                                <AbsDimension x="36" y="0"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="BuyEmAllMaxLabel" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="BuyEmAllCostLabel">
+                            <Offset>
+                                <AbsDimension x="0" y="-6"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="BuyEmAllMaxText" inherits="NumberFontNormal" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="LEFT" relativeTo="BuyEmAllMaxLabel">
+                            <Offset>
+                                <AbsDimension x="36" y="0"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -39,9 +66,9 @@
 					<AbsDimension x="16" y="16"/>
 				</Size>
 				<Anchors>
-					<Anchor point="RIGHT" relativePoint="CENTER">
+					<Anchor point="RIGHT" relativePoint="TOP">
 						<Offset>
-							<AbsDimension x="-59" y="26"/>
+							<AbsDimension x="-59" y="-30"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -59,9 +86,9 @@
 					<AbsDimension x="16" y="16"/>
 				</Size>
 				<Anchors>
-					<Anchor point="LEFT" relativePoint="CENTER">
+					<Anchor point="LEFT" relativePoint="TOP">
 						<Offset>
-							<AbsDimension x="64" y="26"/>
+							<AbsDimension x="64" y="-30"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -76,12 +103,12 @@
 			</Button>
 			<Button name="BuyEmAllOkayButton" inherits="UIPanelButtonTemplate" text="OKAY">
 				<Size>
-					<AbsDimension x="64" y="24"/>
+					<AbsDimension x="80" y="24"/>
 				</Size>
 				<Anchors>
 					<Anchor point="RIGHT" relativePoint="BOTTOM">
 						<Offset>
-							<AbsDimension x="-3" y="32"/>
+							<AbsDimension x="10" y="28"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -98,7 +125,7 @@
 				<Anchors>
 					<Anchor point="LEFT" relativePoint="BOTTOM">
 						<Offset>
-							<AbsDimension x="5" y="32"/>
+							<AbsDimension x="8" y="28"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -108,6 +135,19 @@
 					</OnClick>
 				</Scripts>
 			</Button>
+            <Button name="BuyEmAllStackButton" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="64" y="24"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="BuyEmAllCancelButton" relativePoint="TOPRIGHT"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        BuyEmAllStack_Click()
+                    </OnClick>
+                </Scripts>
+            </Button>
 		</Frames>
 		<Scripts>
             <OnLoad>
