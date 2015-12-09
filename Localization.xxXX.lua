@@ -1,4 +1,4 @@
--- Please e-mail localization files to mcogwheel@gmail.com
+-- Please PM me on WoWInterface with any localization updates.
 if GetLocale() ~= "xxXX" then
 	return
 end

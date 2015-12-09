@@ -1,4 +1,4 @@
--- BuyEmAll - By Cogwheel.
+-- BuyEmAll - Originally created and developed by Cogwheel up to version 2.8.4, now developed by Shinisuryu.
 BuyEmAll = {}
 
 local L = BUYEMALL_LOCALS
@@ -81,7 +81,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 		self.available = numAvailable
 		
 		local bagMax, specialMax, stack =
-			CogsBagSpace:FreeBagSpace(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
+			ItemSpaceCalc(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
 		self.stack = stack
 		self.fit = floor(bagMax / quantity) * quantity + specialMax
 		self.afford = floor(GetMoney() / price) * quantity
