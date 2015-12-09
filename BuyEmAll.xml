@@ -86,7 +86,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						BuyEmAll:Left_Click();
+						BuyEmAll:Left_Click()
 					</OnClick>
 				</Scripts>
 				<NormalTexture file="Interface\MoneyFrame\Arrow-Left-Up"/>
@@ -102,7 +102,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						BuyEmAll:Right_Click();
+						BuyEmAll:Right_Click()
 					</OnClick>
 				</Scripts>
 				<NormalTexture file="Interface\MoneyFrame\Arrow-Right-Up"/>
@@ -157,14 +157,17 @@
 			</Button>
 		</Frames>
 		<Scripts>
+			<OnLoad>
+				BuyEmAll:OnLoad()
+			</OnLoad>
 			<OnHide>
-				BuyEmAll:OnHide();
+				BuyEmAll:OnHide()
 			</OnHide>
 			<OnChar>
-				BuyEmAll:OnChar();
+				BuyEmAll:OnChar()
 			</OnChar>
 			<OnKeyDown>
-				BuyEmAll:OnKeyDown();
+				BuyEmAll:OnKeyDown()
 			</OnKeyDown>
 		</Scripts>
 	</Frame>

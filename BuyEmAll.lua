@@ -1,23 +1,21 @@
 -- BuyEmAll - By Cogwheel.
 
--- Instantiate BuyEmAll
-BuyEmAll = AceLibrary("AceAddon-2.0"):new("AceHook-2.0")
+BuyEmAll = {}
 
--- Localize
-local L = AceLibrary("AceLocale-2.1"):GetInstance("BuyEmAll", true)
+local L = BUYEMALL_LOCALS
 
 -- These are used for the text on the Max and Stack buttons. See BuyEmAll.xml.
-BUYEMALL_MAX = L"Max"
-BUYEMALL_STACK = L"Stack"
+BUYEMALL_MAX = L.MAX
+BUYEMALL_STACK = L.STACK
 
 
 --[[
 It's ALIVE!!! Muahahahahhahahaa!!!!!!
 ]]
-function BuyEmAll:OnEnable()
+function BuyEmAll:OnLoad()
     -- Set up confirmation dialog
     StaticPopupDialogs["BUYEMALL_CONFIRM"] = {
-        text = L"Are you sure you want to buy\n %d × %s?",
+        text = L.CONFIRM,
         button1 = YES,
         button2 = NO,
         OnAccept = function(amount) self:DoPurchase(amount) end,
@@ -25,11 +23,17 @@ function BuyEmAll:OnEnable()
         hideOnEscape = true,
     }
     
-    -- Hook clicking on merchant item buttons
-    self:Hook("MerchantItemButton_OnClick")
-    self:HookScript(MerchantFrame, "OnHide", "MerchantFrame_OnHide")
-    
-    DEFAULT_CHAT_FRAME:AddMessage("BuyEmAll - By Cogwheel\nInspired by Shadowglen of Llane")
+	self.OrigMerchantItemButton_OnModifiedClick = MerchantItemButton_OnModifiedClick
+	MerchantItemButton_OnModifiedClick = function(button, ...)
+		return self:MerchantItemButton_OnModifiedClick(button, ...)
+	end
+	
+	self.OrigMerchantFrame_OnHide = MerchantFrame:GetScript("OnHide")
+	MerchantFrame:SetScript("OnHide", function(...)
+		return self:MerchantFrame_OnHide(...)
+	end)
+	
+    DEFAULT_CHAT_FRAME:AddMessage "BuyEmAll - By Cogwheel"
 end
 
 
@@ -55,7 +59,7 @@ Makes sure the BuyEmAll frame goes away when you leave a vendor
 ]]
 function BuyEmAll:MerchantFrame_OnHide(...)
     BuyEmAllFrame:Hide()
-    return self.hooks[MerchantFrame]["OnHide"].orig(unpack(arg))
+    return self.OrigMerchantFrame_OnHide(...)
 end
 
 
@@ -64,11 +68,10 @@ end
 --[[
 Hooks left-clicks on merchant item buttons
 ]]
-function BuyEmAll:MerchantItemButton_OnClick(button, ignoreModifiers)
+function BuyEmAll:MerchantItemButton_OnModifiedClick(button, ...)
     if MerchantFrame.selectedTab == 1 
        and IsShiftKeyDown()
        and not IsControlKeyDown()
-       and not ignoreModifiers
        and not (ChatFrameEditBox:IsVisible() and button == "LeftButton") then
 	   
         -- Set up various data before showing the BuyEmAll frame
@@ -103,13 +106,13 @@ function BuyEmAll:MerchantItemButton_OnClick(button, ignoreModifiers)
 		
 		self.split = self.defaultStack
 		
-		self.partialFit = mod(self.fit, stack)
+		self.partialFit = self.fit % stack
 		self:SetStackClick()
 		
         self:Show()
 		
     else
-        self.hooks.MerchantItemButton_OnClick.orig(button, ignoreModifiers)
+        self.OrigMerchantItemButton_OnModifiedClick(button, ...)
     end
 end
 
@@ -174,7 +177,7 @@ function BuyEmAll:DoPurchase(amount)
     else
         numLoops = floor(amount/self.stack)
         purchAmount = self.stack
-        leftover = mod(amount, self.stack)
+        leftover = amount % self.stack
     end
     
     for i = 1, numLoops do
@@ -244,7 +247,7 @@ end
 Calculates the amount that the Stack button will enter
 ]]
 function BuyEmAll:SetStackClick()
-	local increase = self.partialFit - mod(self.split, self.stack)
+	local increase = (self.partialFit == 0 and self.stack or self.partialFit) - (self.split % self.stack)
 	self.stackClick = self.split + (increase == 0 and self.stack or increase)
 end
 
@@ -350,7 +353,7 @@ function BuyEmAll:Left_Click()
 		return
 	end
     
-    local decrease = mod(self.split, self.preset)
+    local decrease = self.split % self.preset
     decrease = decrease == 0 and self.preset or decrease
 
 	self.split = self.split - decrease
@@ -366,7 +369,7 @@ Increases the amount by however much is necessary to go up to the next highest
 multiple of the preset stack size.
 ]]
 function BuyEmAll:Right_Click()
-    local increase = self.preset - mod(self.split, self.preset)
+    local increase = self.preset - (self.split % self.preset)
 
 	if self.split + increase > self.max then
 		return
@@ -385,18 +388,18 @@ This table is used for the two functions that follow
 ]]
 BuyEmAll.lines = {
 	stack = {
-		label = L"Stack purchase",
+		label = L.STACK_PURCH,
 		field = "stackClick",
-		{ label = L"Stack size", field = "stack" },
-		{ label = L"Partial stack", field = "partialFit" },
+		{ label = L.STACK_SIZE, field = "stack" },
+		{ label = L.PARTIAL, field = "partialFit" },
 	},
 	max = {
-		label = L"Maximum purchase",
+		label = L.MAX_PURCH,
 		field = "max",
-		{ label = L"You can afford", field = "fit" },
-		{ label = L"You can fit", field = "afford" },
+		{ label = L.AFFORD, field = "afford" },
+		{ label = L.FIT, field = "fit" },
 		{
-			label = L"Vendor has", 
+			label = L.AVAILABLE, 
 			field = "available",
 			Hide = function()
 				return BuyEmAll.available <= 1
@@ -486,7 +489,7 @@ BuyEmAll.specialBagItems = {
 Determine whether an item is an herb or enchanting material
 ]]
 function BuyEmAll:IsSpecialBagItem(bagType, itemID)
-    for curID in string.gfind(self.specialBagItems[bagType], "%d+") do
+    for curID in string.gmatch(self.specialBagItems[bagType], "%d+") do
         if itemID == curID then return true end
     end
     return false
@@ -498,13 +501,14 @@ end
 --[[
 Adapted from example on WoWWiki.com
 ]]
-function BuyEmAll:GetItemInfoFromLink(itemLink)
+local OldGetItemInfo = GetItemInfo
+local function GetItemInfo(itemLink)
     local itemID
     if type(itemLink) == "string" then
         _,_, itemID = string.find(itemLink, "item:(%d-):")
     end
     if itemID then
-        return itemID, GetItemInfo(itemID)
+        return OldGetItemInfo(itemID)
     end
 end
 
@@ -523,14 +527,14 @@ Returns:
 ]]
 function BuyEmAll:FreeBagSpace(itemLink)
     local returns = { freeSpace = 0, specialSpace = 0 }
-    local itemID,name,_,_,_,_,itemSubType, stackSize = 
-        self:GetItemInfoFromLink(itemLink)
+    local name,_,_,_,_,_,itemSubType, stackSize = GetItemInfo(itemLink)
+    local itemID = strfind(itemLink, "item:(%d-):")
     
     for theBag = 0,4 do
         local which, doBag = "freeSpace", true
         
         if theBag > 0 then -- 0 is always the backpack
-            local _,_,_,_,_,_,bagSubType = self:GetItemInfoFromLink(
+            local _,_,_,_,_,bagSubType = GetItemInfo(
                 GetInventoryItemLink("player", theBag + 19) -- Bag #1 is in inventory slot 20
             )
             if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
@@ -539,9 +543,9 @@ function BuyEmAll:FreeBagSpace(itemLink)
             elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
                    bagSubType == "Quiver" and itemSubType ~= "Arrow" or
                    bagSubType == "Herb Bag"
-                        and not self:IsSpecialBagItem("herb") or
+                        and not self:IsSpecialBagItem("herb",itemID) or
                    bagSubType == "Enchanting Bag"
-                        and not self:IsSpecialBagItem("enchanting") then
+                        and not self:IsSpecialBagItem("enchanting",itemID) then
                 doBag = false
             end
         end
