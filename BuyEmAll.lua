@@ -171,7 +171,7 @@ function BuyEmAll:DoPurchase(amount)
 	
 	local numLoops, purchAmount, leftover
 	
-	if self.preset > 1 then
+	--[[ if self.preset > 1 then
 		numLoops = amount/self.preset
 		purchAmount = 1
 		leftover = 0
@@ -179,6 +179,22 @@ function BuyEmAll:DoPurchase(amount)
 		numLoops = floor(amount/self.stack)
 		purchAmount = self.stack
 		leftover = amount % self.stack
+	end
+	]]
+	if amount <= self.stack then
+		purchAmount = amount
+		numLoops = 1
+		leftover = 0
+	else
+		if (amount % self.stack) > 0 then
+			purchAmount = self.stack
+			numLoops = floor(amount/self.stack)
+			leftover = amount % self.stack
+		else
+			purchAmount = self.stack
+			numLoops = floor(amount/self.stack)
+			leftover = 0
+		end
 	end
 	
 	for i = 1, numLoops do
