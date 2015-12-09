@@ -81,7 +81,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 		self.available = numAvailable
 		
 		local bagMax, specialMax, stack =
-			ItemSpaceCalc(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
+			CogsFreeBagSpace(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
 		self.stack = stack
 		self.fit = floor(bagMax / quantity) * quantity + specialMax
 		self.afford = floor(GetMoney() / price) * quantity
@@ -99,7 +99,6 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button, ...)
 		specialMax = floor(specialMax / quantity) * quantity
 		self.defaultStack =
 			specialMax > 0 and specialMax <= self.max and specialMax or quantity
-				
 		self.split = self.defaultStack
 		
 		self.partialFit = self.fit % stack
