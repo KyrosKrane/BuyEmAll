@@ -1,8 +1,10 @@
-BuyEmAll - v1.8
+BuyEmAll - v1.9
 
 By Cogwheel
 
-BuyEmAll allows you to buy more than the default maximum amount when you shift-click an item at a vendor. For instance, if you want to buy 80 pieces of silk thread, you currently have to shift-click the thread, enter 20, hit ok, rinse and repeat three more times. With this addon all you have to do is shift-click the thread, enter 80, hit ok and confirm that you want to buy more than a stack (this confirmation is there so you don't accidentally buy 1000 of something you meant to buy 100 of). Additionally, you can now shift-click items that come in preset stacks or items that don't stack at all.
+BuyEmAll allows you to buy more than the default maximum amount when you shift-click an item at a vendor. For instance, if you want to buy 80 pieces of silk thread, you currently have to shift-click the thread, enter 20, hit ok, rinse and repeat three more times. With this addon all you have to do is shift-click the thread, enter 80, hit ok and confirm that you want to buy more than a stack (this confirmation is there so you don't accidentally buy 1000 of something you meant to buy 100 of).
+
+Additionally, you can now shift-click items that come in preset stacks or items that don't stack at all. If you are buying ammo and have free spots in your ammo pouch/quiver, the amount that appears when you first shift-click the item will be however many stacks it takes to refill your bag.
 
 NOTICE - Despite the facts that you cannot click in the box where the number of items is shown and that there is no cursor, it is possible to type in the amount of the item you wish to buy. This is true for the default UI, as I discovered while researching how to write this addon. Anyway, back to the point...
 
@@ -10,7 +12,7 @@ NOTICE - Despite the facts that you cannot click in the box where the number of 
 
 The amount you can enter is limited by:
 
-* The amount of free space in your bags. Partial stacks are included in this calculation, but specialty bags are not (e.g. free slots in herbalism bags will be counted towards your free space regardless of what you're purchasing)
+* The amount of free space in your bags. Partial stacks are included in this calculation, as are specialty bags (e.g. free slots in herbalism bags will be only be counted towards your free space if you are buying an essence, dust, or shard)
 
 * The amount you can afford.
 
@@ -35,6 +37,8 @@ If you enter 18, it will automatically buy 20 with no confirmation. If you enter
 Please visit Cogwheel's Workshop at http://wowinterface.com/portal.php?&uid=17646 if you have any suggestions or bug reports, and to see what is in store for the future.
 
 CHANGES:
+
+v1.9 - Free space calculation now takes into account special bag types. Added quick-fill feature for ammo pouches/quivers.
 
 v1.8 - The Stack Split frame now shows you the maximum amount you will be able to purchase. For preset stack items, the left and right arrows increase or decrease to multiples of the preset stack size.
 

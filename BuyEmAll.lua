@@ -1,10 +1,16 @@
--- BuyEmAll - By Cogwheel v1.8 - See readme.txt
+-- BuyEmAll - By Cogwheel v1.9 - See readme.txt
 
 --[[Hook BuyMerchantItem for debugging purposes 
 function BuyMerchantItem(button, amount)
     if not amount then amount = 1 end
     print("Buying "..amount.." items.")
 end --]]
+
+-- Herb & Enchanting item lists courtesy of Periodic Table by Tekkub
+BuyEmAll_SpecialItems = {
+    Herb = "3358 8839 13466 4625 13467 3821 785 13465 13468 2450 2452 3818 3355 3357 8838 3369 3820 8153 8836 13463 8845 8846 13464 2447 2449 765 2453 3819 3356 8831",
+    Enchant = "11083 16204 11137 11176 10940 11174 10938 11135 11175 16202 11134 16203 10998 11082 10939 11084 14343 11139 10978 11177 14344 11138 11178",
+}
 
 
 
@@ -47,7 +53,7 @@ function MerchantItemButton_OnClick(button, ignoreModifiers)
 				if ( ChatFrameEditBox:IsVisible() ) then
 					ChatFrameEditBox:Insert(GetMerchantItemLink(this:GetID()));
 				else
-                    BuyEmAll_ChooseAmount(this)
+                    BuyEmAll_ChooseAmount()
 				end
 			else
 				PickupMerchantItem(this:GetID());
@@ -56,7 +62,7 @@ function MerchantItemButton_OnClick(button, ignoreModifiers)
 			if ( IsControlKeyDown() and not ignoreModifiers ) then
 				return;
 			elseif ( IsShiftKeyDown() and not ignoreModifiers ) then
-                BuyEmAll_ChooseAmount(this)
+                BuyEmAll_ChooseAmount()
 			else
 				BuyMerchantItem(this:GetID());
 			end
@@ -70,19 +76,35 @@ end
 
 
 
--- Figures out maximum purchase amount and shows the BuyEmAllFrame
-function BuyEmAll_ChooseAmount(this)
-    local name, _, price, quantity, numAvailable = GetMerchantItemInfo(this:GetID());
-    this.itemLink = GetMerchantItemLink(this:GetID())
-    local _,_,itemString = string.find(this.itemLink, "|H(.-)|h")
-    _,_,_,_,_,_,this.stackSize = GetItemInfo(itemString)
-    this.presetStack = quantity
+-- Courtesy of wowwiki.com
+function GetItemInfoFromItemLink(link)
+    local itemId = nil;
+    if ( type(link) == "string" ) then
+        _,_, itemId = string.find(link, "item:(%d+):");
+    end
+    if ( itemId ) then
+        return itemId, GetItemInfo(itemId);
+    end
+end
 
-    local bagMax = math.floor(BuyEmAll_FreeSpace(name, this.stackSize) / quantity) * quantity
+
+
+
+-- Figures out maximum purchase amount and shows the BuyEmAllFrame
+function BuyEmAll_ChooseAmount()
+    local name, _, price, quantity, numAvailable = GetMerchantItemInfo(this:GetID());
+    this.presetStack = quantity
+    this.itemName = name
+    this.itemID, _,_,_,_,_, this.itemSubType, this.stackSize = 
+        GetItemInfoFromItemLink(GetMerchantItemLink(this:GetID()))
+    
+    local bagSpace, specialSpace = BuyEmAll_FreeSpace(name, itemID)
+    local bagMax = math.floor(bagSpace / quantity) * quantity
+    local specialMax = math.floor(specialSpace / quantity) * quantity
     local moneyMax = math.floor(GetMoney() / price) * quantity
     local maxPurchase = math.min(bagMax, moneyMax)
     if numAvailable > 0 then maxPurchase = math.min(maxPurchase, numAvailable * quantity) end
-
+    
     if not name or maxPurchase == 0 then
         return
     elseif maxPurchase == 1 then
@@ -90,33 +112,61 @@ function BuyEmAll_ChooseAmount(this)
         return
     end
     
-    OpenBuyEmAllFrame(maxPurchase, this, "BOTTOMLEFT", "TOPLEFT")
+    OpenBuyEmAllFrame(maxPurchase+specialMax, specialMax > 0 and specialMax or quantity, "BOTTOMLEFT", "TOPLEFT")
 end
 
 
 
 
---[[ Determines free bag space. DOES NOT take into account special bags. I.e. if
-     you have free space in an herbalism bag, it will be counted in the total
-     regardless of what you are buying. I hope to change this in a future version. ]]
-function BuyEmAll_FreeSpace(name, stackSize)
-    local freeSpace = 0
+--  Determines free bag space.
+function BuyEmAll_FreeSpace(name, itemID)
+    local returns = { freeSpace = 0, specialSpace = 0}
     
 	for theBag = 0,4 do
-		local numSlot = GetContainerNumSlots(theBag);
-		for theSlot = 1, numSlot do
-			local itemLink = GetContainerItemLink(theBag, theSlot);
-			if not itemLink then
-				freeSpace = freeSpace + stackSize;
-			elseif string.find(itemLink, "%["..name.."%]") then
-                local _,itemCount = GetContainerItemInfo(theBag, theSlot)
-                freeSpace = freeSpace + stackSize - itemCount
+        local which = "freeSpace"
+        local doBag = true
+        
+        if theBag > 0 then
+            local _,_,_,_,_,_,bagSubType =
+                GetItemInfoFromItemLink(GetInventoryItemLink("player", theBag + 19)) -- Bag #1 is in inventory slot 20
+            if bagSubType == "Ammo Pouch" and this.itemSubType == "Bullet" or
+               bagSubType == "Quiver" and this.itemSubType == "Arrow" then
+                which = "specialSpace"
+            elseif bagSubType == "Ammo Pouch" and this.itemSubType ~= "Bullet" or
+                   bagSubType == "Quiver" and this.itemSubType ~= "Arrow" or
+                   bagSubType == "Herb Bag" and not BuyEmAll_IsSpecial("Herb") or
+                   bagSubType == "Enchanting Bag" and not BuyEmAll_IsSpecial("Enchant") then
+                doBag = false
             end
-		end
+        end
+            
+		if doBag then
+            local numSlot = GetContainerNumSlots(theBag);
+            for theSlot = 1, numSlot do
+                local itemLink = GetContainerItemLink(theBag, theSlot);
+                if not itemLink then
+                    returns[which] = returns[which] + this.stackSize;
+                elseif string.find(itemLink, "%["..name.."%]") then
+                    local _,itemCount = GetContainerItemInfo(theBag, theSlot)
+                    returns[which] = returns[which] + this.stackSize - itemCount
+                end
+            end
+        end
 	end
-    
-    return freeSpace
+    return returns.freeSpace, returns.specialSpace
 end
+
+
+
+
+-- Determine whether an item is an herb or enchanting material
+function BuyEmAll_IsSpecial(which)
+    for itemID in gfind(BuyEmAll_SpecialItems[which], "%d+") do
+        if tonumber(this.itemID) == tonumber(itemID) then return true end
+    end
+    return false
+end
+
 
 
 
@@ -125,7 +175,7 @@ function BuyEmAll_SplitStack(button, amount)
         amount = math.ceil(amount/button.presetStack) * button.presetStack
         local params = { button = button, amount = amount }
         if amount > button.stackSize then
-            local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, button.itemLink)
+            local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, button.itemName)
             dialog.data = params
         elseif button.presetStack > 1 then
             BuyEmAll_OnAccept(params)
@@ -179,7 +229,7 @@ end
 
 
 
-function OpenBuyEmAllFrame(maxStack, parent, anchor, anchorTo)
+function OpenBuyEmAllFrame(maxStack, initStack, anchor, anchorTo)
     if ( BuyEmAllFrame.owner ) then
 		BuyEmAllFrame.owner.hasBuyEmAll = 0;
 	end
@@ -190,9 +240,9 @@ function OpenBuyEmAllFrame(maxStack, parent, anchor, anchorTo)
 		return;
 	end
 
-	BuyEmAllFrame.owner = parent;
-	parent.hasBuyEmAll = 1;
-	BuyEmAllFrame.split = parent.presetStack;
+	BuyEmAllFrame.owner = this;
+	this.hasBuyEmAll = 1;
+	BuyEmAllFrame.split = initStack;
 	BuyEmAllFrame.typing = 0;
 	BuyEmAllText:SetText(BuyEmAllFrame.split);
 	BuyEmAllLeftButton:Disable();
@@ -201,7 +251,7 @@ function OpenBuyEmAllFrame(maxStack, parent, anchor, anchorTo)
     BuyEmAllMaxText:SetText("Max: "..maxStack)
 
 	BuyEmAllFrame:ClearAllPoints();
-	BuyEmAllFrame:SetPoint(anchor, parent, anchorTo, 0, 0);
+	BuyEmAllFrame:SetPoint(anchor, this, anchorTo, 0, 0);
 	BuyEmAllFrame:Show();
 end
 
