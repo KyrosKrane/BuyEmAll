@@ -1,6 +1,6 @@
-BuyEmAll - v2.0
+BuyEmAll - v2.1
 
-By Cogwheel - Inspired by Tanao of Llane
+By Cogwheel
 
 BuyEmAll enhances the shift-click interface at vendors.
 
@@ -26,7 +26,7 @@ Below the box where you enter the amount is a money display. This updates as you
 
 ** Quickly buy a stack or the maximum amount you can buy **
 
-The BuyEmAll window has Stack and Max buttons which allow you to buy a full stack or as much as you can afford/fit. Hovering over the buttons shows a tooltip with the number of items you will be buying and updates the cost display so you will know how much you're spending. See NOTES below for information on the maximum you can buy.
+The BuyEmAll window has Max and Stack buttons which allow you to enter a full stack or as much as you can afford/fit. Hovering over the buttons shows a tooltip with the number of items you will be buying and updates the cost display so you will know how much you'll be spending. See NOTES below for information on the maximum you can buy.
 
 ** Quickly refill your ammo pouch **
 
@@ -37,11 +37,11 @@ If you are buying ammo and have free spots in your ammo pouch/quiver, the amount
 
 The amount you can enter is limited by:
 
-- The amount of free space in your bags. Partial stacks are included in this calculation, as are specialty bags (e.g. free slots in enchanting bags will be only be counted towards your free space if you are buying an essence, dust, or shard)
+- The amount of free space in your bags. Partial stacks are included in this calculation, as are specialty bags (e.g. free slots in enchanting bags will be only be counted towards your free space if you are buying an essence, dust, or shard).
 
 - The amount you can afford.
 
-- The number available from the vendor (for limited stock items).
+- The amount available from the vendor (for limited stock items).
 
 A breakdown of these numbers is included in the Max button's tooltip.
 
@@ -58,12 +58,18 @@ If you enter 18 and hit Okay, it will automatically buy 20 with no confirmation.
 
 ---------- BUGS/FEATURES REQUESTS ----------
 
-You may experience errors if you use Recipe Book or Advanced Trade Skill Window. I have not been able to reproduce any problems with either addon, but I have received a report for each of them.
+There are no confirmed bugs at this time.
 
 Please visit Cogwheel's Workshop at http://cogwheel.wowinterface.com if you have any suggestions or bug reports, and to see what is in store for the future.
 
 
 ---------- CHANGES ----------
+
+v2.1
+
+- Slightly rearranged the buttons to have a bit more space in between.
+- Clicking on the Max and Stack buttons will now change the amount in the box instead of immediately bringing up the confirmation window.
+- Stack button will now be disabled for items whose stack size is the same as their purchase unit (ammunition, for instance).
 
 v2.0
 

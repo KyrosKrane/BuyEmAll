@@ -1,10 +1,7 @@
--- BuyEmAll - By Cogwheel. Inspired by Tanao of Llane
+-- BuyEmAll - By Cogwheel.
 
 -- Instantiate BuyEmAll
-BuyEmAll = AceLibrary("AceAddon-2.0"):new(
-    "AceHook-2.0"--, 
-    --"AceConsole-2.0"
-)
+BuyEmAll = AceLibrary("AceAddon-2.0"):new("AceHook-2.0")
 
 -- Localize
 local L = AceLibrary("AceLocale-2.0"):new("BuyEmAll")
@@ -12,8 +9,6 @@ local L = AceLibrary("AceLocale-2.0"):new("BuyEmAll")
 -- These are used for the text on the Max and Stack buttons. See BuyEmAll.xml.
 BUYEMALL_MAX = L"Max"
 BUYEMALL_STACK = L"Stack"
-
-
 
 
 --[[
@@ -120,20 +115,19 @@ Prepare the various UI elements of the BuyEmAll frame and show it
 function BuyEmAll:Show()
     self.split = self.defaultStack
 	self.typing = 0
-	BuyEmAllText:SetText(self.defaultStack)
 	BuyEmAllLeftButton:Disable()
 	BuyEmAllRightButton:Enable()
  
     BuyEmAllStackButton:Enable()
-    if self.max < self.stack or self.stack == 1 then
+    if self.max < self.stack or self.stack == self.preset then
         BuyEmAllStackButton:Disable()
     end
 
 	BuyEmAllFrame:ClearAllPoints()
 	BuyEmAllFrame:SetPoint("BOTTOMLEFT", this, "TOPLEFT", 0, 0)
-	BuyEmAllFrame:Show()
     
-    self:UpdateCost(self.split)
+	BuyEmAllFrame:Show()
+    self:UpdateDisplay()
 end
 
 
@@ -192,11 +186,21 @@ end
 Changes the money display to however much amount of the item will cost. If
 amount is not specified, it uses the current split value.
 ]]
-function BuyEmAll:UpdateCost(amount)
+function BuyEmAll:UpdateDisplay(amount)
     local purchase = ceil((amount and amount or self.split) / self.preset)
     local cost = purchase * self.price
     
     MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
+	if not amount then
+        BuyEmAllText:SetText(self.split)
+        BuyEmAllLeftButton:Enable()
+        BuyEmAllRightButton:Enable()
+        if self.split == self.max then
+            BuyEmAllRightButton:Disable()
+        elseif self.split <= self.preset then
+            BuyEmAllLeftButton:Disable()
+        end
+    end
 end
 
 
@@ -222,9 +226,11 @@ function BuyEmAll:OnClick()
     elseif this == BuyEmAllCancelButton then
         BuyEmAllFrame:Hide()
     elseif this == BuyEmAllStackButton then
-        self:DoConfirmation(self.stack)
+        self.split = self.stack
+        self:UpdateDisplay()
     elseif this == BuyEmAllMaxButton then
-        self:DoConfirmation(self.max)
+        self.split = self.max
+        self:UpdateDisplay()
     end
 end
 
@@ -251,27 +257,16 @@ function BuyEmAll:OnChar()
 			self.split = 1
 		end
         
-        self:UpdateCost()
+        self:UpdateDisplay()
 		return
 	end
 
 	if split <= self.max then
 		self.split = split
-		BuyEmAllText:SetText(split)
-		if split == self.max then
-			BuyEmAllRightButton:Disable()
-		else
-			BuyEmAllRightButton:Enable()
-		end
-		if split <= self.preset then
-			BuyEmAllLeftButton:Disable()
-		else
-			BuyEmAllLeftButton:Enable()
-		end
 	elseif split == 0 then
 		self.split = 1
 	end
-    self:UpdateCost()
+    self:UpdateDisplay()
 end
 
 
@@ -291,20 +286,8 @@ function BuyEmAll:OnKeyDown()
 			self.split = 1
 			self.typing = 0
         end
-        if self.split <= self.preset then
-			BuyEmAllLeftButton:Disable()
-		else
-			BuyEmAllLeftButton:Enable()
-		end
-		
-        BuyEmAllText:SetText(self.split)
-		if self.split == self.max then
-			BuyEmAllRightButton:Disable()
-		else
-			BuyEmAllRightButton:Enable()
-		end
         
-        self:UpdateCost()
+        self:UpdateDisplay()
 	elseif arg1 == "ENTER" then
 		self:VerifyPurchase()
 	elseif arg1 == "ESCAPE" then
@@ -333,13 +316,7 @@ function BuyEmAll:Left_Click()
 
 	self.split = self.split - decrease
 
-	BuyEmAllText:SetText(self.split)
-	if self.split <= self.preset then
-		BuyEmAllLeftButton:Disable()
-	end
-	BuyEmAllRightButton:Enable()
-    
-    self:UpdateCost()
+    self:UpdateDisplay()
 end
 
 
@@ -358,13 +335,7 @@ function BuyEmAll:Right_Click()
     
 	self.split = self.split + increase
     
-	BuyEmAllText:SetText(self.split)
-	if self.split == self.max then
-		BuyEmAllRightButton:Disable()
-	end
-	BuyEmAllLeftButton:Enable()
-    
-    self:UpdateCost()
+    self:UpdateDisplay()
 end
 
 
@@ -376,7 +347,7 @@ Shows tooltips when you hover over the Stack or Max buttons
 function BuyEmAll:OnEnter()
     local cost, label, amount
     local lines = {}
-    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")--, -BuyEmAllFrame:GetWidth() + 5, 5)
     
     if this == BuyEmAllStackButton then
         cost = self.stack
@@ -402,8 +373,8 @@ function BuyEmAll:OnEnter()
     for _, line in lines do
         self:AddTooltipLine(line)
     end
+    self:UpdateDisplay(amount)
     GameTooltip:Show()
-    self:UpdateCost(cost)
 end
 
 
@@ -428,7 +399,7 @@ end
 Hides the tooltip
 ]]
 function BuyEmAll:OnLeave()
-    self:UpdateCost()
+    self:UpdateDisplay()
     GameTooltip:Hide()
 end
 

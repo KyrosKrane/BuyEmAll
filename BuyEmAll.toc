@@ -3,8 +3,8 @@
 ## Url: http://cogwheel.wowinterface.com
 ## eMail: mcogwheel@gmail.com
 ## Title: BuyEmAll
-## Version: 2.0
-## Notes: Enhances shift-click interface at vendors. Inspired by Tanao of Llane.
+## Version: 2.1
+## Notes: Enhances shift-click interface at vendors
 ## X-Category: Interface Enhancements
 
 Ace2\AceLibrary\AceLibrary.lua
