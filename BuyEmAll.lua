@@ -32,6 +32,7 @@ function BuyEmAll:OnLoad()
 	end)
 end
 
+
 SLASH_BUYEMALL1 = "/buyemall"
 SlashCmdList["BUYEMALL"] = function(message, editbox) BuyEmAll:SlashHandler(message, editbox) end
 function BuyEmAll:SlashHandler(message, editbox)
@@ -46,6 +47,7 @@ function BuyEmAll:SlashHandler(message, editbox)
 	elseif message ~= "toggleconfirm" then return
 	end
 end
+
 
 function BuyEmAll:MoneyFrame_OnLoad(frame)
 	-- Set up money frame
@@ -69,6 +71,46 @@ function BuyEmAll:MerchantFrame_OnHide(...)
 end
 
 
+function BuyEmAll:CogsFreeBagSpace(itemID)
+	local freeSpace = 0
+	local itemSubType = GetItemFamily(itemID)
+	local stackSize = select(8, GetItemInfo(itemID))
+	
+	for theBag = 0,4 do
+		local doBag = true
+		
+		if theBag > 0 then -- 0 is always the backpack
+			local bagLink = GetInventoryItemLink("player", 19 + theBag) -- Bag #1 is in inventory slot 20
+			if bagLink then
+				local bagSubType = GetItemFamily(bagLink)
+				if bagSubType == itemSubType then
+					doBag = true
+				elseif bagSubType == 0 then
+					doBag = true
+				else doBag = false
+				end
+			else
+				doBag = false
+			end
+		end
+		
+		if doBag then
+			local numSlot = GetContainerNumSlots(theBag)
+			for theSlot = 1, numSlot do
+				local itemLink = GetContainerItemLink(theBag, theSlot)
+				if not itemLink then
+					freeSpace = freeSpace + stackSize
+				elseif strfind(itemLink, "item:"..itemID..":") then
+					local _,itemCount = GetContainerItemInfo(theBag, theSlot)
+					freeSpace = freeSpace + stackSize - itemCount
+				end
+			end
+		end
+	end
+	return freeSpace, stackSize
+end
+
+
 --[[
 Hooks left-clicks on merchant item buttons
 ]]
@@ -89,10 +131,10 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		self.itemName = name
 		self.available = numAvailable
 		
-		local bagMax, stack =
-			CogsFreeBagSpace(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
+		local self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"))
+		local bagMax, stack = self:CogsFreeBagSpace(self.itemID)
 		self.stack = stack
-		self.fit = floor(bagMax / quantity) * quantity
+		self.fit = bagMax
 		self.afford = floor(GetMoney() / price) * quantity
 		self.max = min(self.fit, self.afford)
 		if numAvailable > -1 then
@@ -106,7 +148,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		end
 		
 		self.defaultStack = quantity
-		self.split = self.defaultStack
+		self.split = 1
 		
 		self.partialFit = self.fit % stack
 		self:SetStackClick()
@@ -146,7 +188,7 @@ Otherwise, do the purchase
 function BuyEmAll:VerifyPurchase(amount)
 	amount = amount or self.split
 	if (amount > 0) then
-		amount = ceil(amount/self.preset) * self.preset
+		amount = (amount / self.preset) * self.preset		
 		if amount > self.stack and amount > self.defaultStack then
 			if BEAConfirmToggle == 1 then
 				self:DoConfirmation(amount)
@@ -162,13 +204,11 @@ end
 
 --[[
 Makes the actual purchase(s)
-amount must be a multiple of the preset stack size if preset stack size > 1
 ]]
 function BuyEmAll:DoPurchase(amount)
 	BuyEmAllFrame:Hide()
-	
 	local numLoops, purchAmount, leftover
-	
+
 	if amount <= self.stack then
 		purchAmount = amount
 		numLoops = 1
@@ -198,8 +238,13 @@ Changes the money display to however much amount of the item will cost. If
 amount is not specified, it uses the current split value.
 ]]
 function BuyEmAll:UpdateDisplay()
-	local purchase = ceil(self.split / self.preset)
-	local cost = purchase * self.price
+	local purchase = self.split
+	local cost = 0
+	if self.defaultStack > 1 then
+		cost = purchase * (self.price / self.defaultStack)
+	else
+		cost = purchase * self.price
+	end
 	MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
 	BuyEmAllText:SetText(self.split)
 	
@@ -207,7 +252,7 @@ function BuyEmAll:UpdateDisplay()
 	BuyEmAllRightButton:Enable()
 	if self.split == self.max then
 		BuyEmAllRightButton:Disable()
-	elseif self.split <= self.preset then
+	elseif self.split == 1 then
 		BuyEmAllLeftButton:Disable()
 	end
 	
@@ -239,7 +284,7 @@ end
 function BuyEmAll:SetDeStackClick()
 	local decrease = tonumber(BuyEmAllText:GetText())
 	if decrease <= self.stack then
-		self.split = self.preset
+		self.split = 1
 		self:UpdateDisplay()
 	else
 		self.split = decrease - self.stack
@@ -253,7 +298,8 @@ OnClick handler for the four main buttons
 ]]
 function BuyEmAll:OnClick(frame,button)
 	if frame == BuyEmAllOkayButton then
-		self:VerifyPurchase()
+		amount = tonumber(BuyEmAllText:GetText())
+		self:VerifyPurchase(amount)
 	elseif frame == BuyEmAllCancelButton then
 		BuyEmAllFrame:Hide()
 	elseif frame == BuyEmAllStackButton then
@@ -265,7 +311,7 @@ function BuyEmAll:OnClick(frame,button)
 			else
 				GameTooltip:Hide()
 			end
-		else
+		elseif button == "RightButton" then
 			self:SetDeStackClick()
 			if frame:IsEnabled() == 1 then
 				self:OnEnter(frame)
@@ -348,6 +394,7 @@ Decreases the amount by however much is necessary to go down to the next
 lowest multiple of the preset stack size.
 ]]
 function BuyEmAll:Left_Click()
+--[[
 	if self.split <= self.preset then
 		return
 	end
@@ -358,6 +405,11 @@ function BuyEmAll:Left_Click()
 	self.split = self.split - decrease
 
 	self:UpdateDisplay()
+	]]
+	
+	self.split = self.split - 1
+	
+	self:UpdateDisplay()
 end
 
 
@@ -366,13 +418,17 @@ Increases the amount by however much is necessary to go up to the next highest
 multiple of the preset stack size.
 ]]
 function BuyEmAll:Right_Click()
-	local increase = self.preset - (self.split % self.preset)
+--[[	local increase = self.preset - (self.split % self.preset)
 
 	if self.split + increase > self.max then
 		return
 	end
 	
 	self.split = self.split + increase
+	
+	self:UpdateDisplay()
+]]
+	self.split = self.split + 1
 	
 	self:UpdateDisplay()
 end
