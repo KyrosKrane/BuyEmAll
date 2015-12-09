@@ -1,8 +1,8 @@
 ﻿## Author: Shinisuryu
-## Interface: 40200
+## Interface: 40300
 ## Notes: Enhances shift-click interface at vendors.
-## Title: BuyEmAll (3.0.7)
-## Version: 3.0.7
+## Title: BuyEmAll (3.0.8)
+## Version: 3.0.8
 ## SavedVariablesPerCharacter: BEAConfirmToggle
 Localization.enUS.lua
 Localization.esES.lua

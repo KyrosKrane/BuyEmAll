@@ -46,16 +46,8 @@ SLASH_BUYEMALL1 = "/buyemall"
 SlashCmdList["BUYEMALL"] = function(message, editbox) BuyEmAll:SlashHandler(message, editbox) end
 function BuyEmAll:SlashHandler(message, editbox)
 	if message == "" then
-		print("BuyEmAll: Use /buyemall confirm or toggleconfirm to enable/disable the large purchange confirm.")
+		print("BuyEmAll: Use /buyemall confirm to enable/disable the large purchange confirm.")
 	elseif message == "confirm" then 
-		if BEAConfirmToggle == 1 then
-			BEAConfirmToggle = 0
-			print("BuyEmAll: Large purchase confirm window disabled.")
-		elseif BEAConfirmToggle == 0 then
-			BEAConfirmToggle = 1
-			print("BuyEmAll: Large purchase confirm window enabled.")
-		end
-	elseif message == "confirm" then
 		if BEAConfirmToggle == 1 then
 			BEAConfirmToggle = 0
 			print("BuyEmAll: Large purchase confirm window disabled.")
@@ -152,6 +144,13 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		
 		-- Bypass for purchasable things without an itemid/itemlink
 		if GetMerchantItemLink(self.itemIndex) == nil then
+			self.ConfirmNoItemID = self.itemIndex
+			local dialog = StaticPopup_Show("BUYEMALL_CONFIRM2", quantity, self.itemName)
+			return
+		end
+		
+		-- Bypass for items with extended cost
+		if select(7,GetMerchantItemInfo(self.itemIndex)) == 1 then
 			self.ConfirmNoItemID = self.itemIndex
 			local dialog = StaticPopup_Show("BUYEMALL_CONFIRM2", quantity, self.itemName)
 			return
