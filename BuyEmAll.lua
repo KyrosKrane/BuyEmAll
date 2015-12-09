@@ -193,7 +193,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
 	
 	self.AltCurrency1Type, self.AltCurrency2Type, self.AltCurrency3Type = 0, 0, 0;
 	self.AltCurrency1, self.AltCurrency2, self.AltCurrency3 = 0, 0, 0;
-	local Afford1, Afford2, Afford3 = 99999, 99999, 99999;
+	local Afford1, Afford2, Afford3 = 999999, 999999, 999999;
 
 	local NumAltCurrency = GetMerchantItemCostInfo(itemIndex);
 
@@ -311,6 +311,10 @@ function BuyEmAll:AltCurrencyTranslating(Texture)
 		return 697;
 	elseif (strmatch(Texture, "%a+_%d+$") == "coin_18") then
 		return 738;
+	elseif (strmatch(Texture, "%a+$") == "timelesscoin") then
+		return 777;
+	elseif (strmatch(Texture, "%a+-%a+$") == "timelesscoin-bloody") then
+		return 789;
 	end
 end
 
