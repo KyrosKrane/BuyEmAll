@@ -131,7 +131,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		self.itemName = name
 		self.available = numAvailable
 		
-		local self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"))
+		self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"))
 		local bagMax, stack = self:CogsFreeBagSpace(self.itemID)
 		self.stack = stack
 		self.fit = bagMax
