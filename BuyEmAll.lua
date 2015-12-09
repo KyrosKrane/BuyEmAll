@@ -510,7 +510,7 @@ local function GetItemInfo(itemLink)
     if itemID then
         return OldGetItemInfo(itemID)
     end
-end
+end --]]
 
 
 
@@ -537,11 +537,14 @@ function BuyEmAll:FreeBagSpace(itemLink)
             local _,_,_,_,_,bagSubType = GetItemInfo(
                 GetInventoryItemLink("player", theBag + 19) -- Bag #1 is in inventory slot 20
             )
-            if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
+            --[[if bagSubType == "Ammo Pouch" and itemSubType == "Bullet" or
                bagSubType == "Quiver" and itemSubType == "Arrow" then
-                which = "specialSpace"
-            elseif bagSubType == "Ammo Pouch" and itemSubType ~= "Bullet" or
-                   bagSubType == "Quiver" and itemSubType ~= "Arrow" or
+                which = "specialSpace"]]
+			if bagSubType == "Quiver" and (itemSubType == "Bullet" or
+										   itemSubType == "Arrow") then
+				which = "specialSpace"
+            elseif itemSubType ~= "Bullet" or
+                   itemSubType ~= "Arrow" or
                    bagSubType == "Herb Bag"
                         and not self:IsSpecialBagItem("herb",itemID) or
                    bagSubType == "Enchanting Bag"
