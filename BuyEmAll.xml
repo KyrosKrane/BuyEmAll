@@ -1,6 +1,7 @@
 ﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\UI.xsd">
-    <Script file="BuyEmAll.lua" />
+    <Script file="localization.lua"/>
+    <Script file="BuyEmAll.lua"/>
 	<Frame name="BuyEmAllFrame" frameStrata="HIGH" parent="UIParent" toplevel="true" enableMouse="true" enableKeyboard="true" hidden="true">
 		<Size>
 			<AbsDimension x="172" y="128"/>
@@ -39,9 +40,7 @@
 				<FontString name="BuyEmAllText" inherits="GameFontHighlight" justifyH="RIGHT">
 					<Anchors>
 						<Anchor point="TOPRIGHT">
-							<Offset>
-								<AbsDimension x="-50" y="-23"/>
-							</Offset>
+							<Offset x="-50" y="-23"/>
 						</Anchor>
 					</Anchors>
 				</FontString>

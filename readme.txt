@@ -1,4 +1,4 @@
-BuyEmAll - v1.11.1
+BuyEmAll - v1.12
 
 By Cogwheel
 
@@ -22,11 +22,11 @@ The default UI doesn't allow you to shift-click items like Refreshing Spring Wat
 
 ** Know how much you will be spending **
 
-Below the box where you enter the amount is a money display. This updates as change the amount you are going to buy, showing you exactly how much your purchase will cost you.
+Below the box where you enter the amount is a money display. This updates as you change the amount you are going to buy, showing you exactly how much your purchase will cost.
 
 ** Quickly buy a stack or the maximum amount you can buy **
 
-The BuyEmAll window has Stack Max buttons which allow you to buy a full stack or as much as you can afford/fit with one click. Hovering over the buttons shows a tooltip with the number of items you will be buying and updates the cost display so you will know how much you're spending. See NOTES below for information on the maximum you can buy.
+The BuyEmAll window has Stack and Max buttons which allow you to buy a full stack or as much as you can afford/fit. Hovering over the buttons shows a tooltip with the number of items you will be buying and updates the cost display so you will know how much you're spending. See NOTES below for information on the maximum you can buy.
 
 ** Quickly refill your ammo pouch **
 
@@ -37,11 +37,13 @@ If you are buying ammo and have free spots in your ammo pouch/quiver, the amount
 
 The amount you can enter is limited by:
 
-- The amount of free space in your bags. Partial stacks are included in this calculation, as are specialty bags (e.g. free slots in herbalism bags will be only be counted towards your free space if you are buying an essence, dust, or shard)
+- The amount of free space in your bags. Partial stacks are included in this calculation, as are specialty bags (e.g. free slots in enchanting bags will be only be counted towards your free space if you are buying an essence, dust, or shard)
 
 - The amount you can afford.
 
 - The number available from the vendor (for limited stock items).
+
+A breakdown of these numbers is included in the tooltip when you mouse over the Max button.
 
 If you can only buy one item for any of these reasons, shift-click behaves just like a left click, picking up one of the item onto your cursor. If you can't buy any, then shift-click does nothing.
 
@@ -53,13 +55,24 @@ Example: [Refreshing Spring Water] - Stack Size: 20, Purchase Unit: 5
 
 If you enter 18, it will automatically buy 20 with no confirmation. If you enter 23, a confirmation will pop up asking, "Are you sure you want to buy 25 of this item?"
 
+
 ---------- FEATURES/BUGS ----------
 
 There are no known bugs at this time, though any help with localization would be appreciated.
 
 Please visit Cogwheel's Workshop at http://wowinterface.com/portal.php?&uid=17646 if you have any suggestions or bug reports, and to see what is in store for the future.
 
+
 ---------- CHANGES ----------
+
+v1.12
+
+- Stack and Max buttons display a confirmation regardless of purchase size to alleviate accidental clicks.
+- The BuyEmAll frame will not hide until you accept the confirmation or if there is no confirmation.
+- Fixed a bug where you could attempt to buy an item a vendor no longer has.
+- German translation courtesy of JokerGermany.
+- Changed the text on Max and Stack tooltips.
+- Corrected a few typos in this readme.
 
 v1.11.1
 

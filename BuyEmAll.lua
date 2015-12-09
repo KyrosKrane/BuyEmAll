@@ -1,6 +1,6 @@
--- BuyEmAll - By Cogwheel v1.11.1 - See readme.txt
+-- BuyEmAll - By Cogwheel v1.12 - See readme.txt
 
---[[Hook BuyMerchantItem for debugging purposes
+--[[Hook BuyMerchantItem for debugging purposes 
 function BuyMerchantItem(button, amount)
     if not amount then amount = 1 end
     print("Buying "..amount.." items.")
@@ -18,16 +18,16 @@ BuyEmAll_SpecialItems = {
 function BuyEmAllFrame_OnLoad()
     -- Set up confirmation dialog
 	StaticPopupDialogs["BUYEMALL_CONFIRM"] = {
-		text = "Are you sure you want to buy\n %d × %s?",
+		text = BUYEMALL_CONFIRMATION,
 		button1 = TEXT(YES),
 		button2 = TEXT(NO),
 		OnAccept = BuyEmAll_OnAccept,
 		timeout = 0,
-		hideOnEscape = true
+		hideOnEscape = true,
 	}
     
-    BuyEmAllStackButton.defaultText = "Stack"
-    BuyEmAllMaxButton.defaultText = "Max"
+    BuyEmAllStackButton.defaultText = BUYEMALL_STACK
+    BuyEmAllMaxButton.defaultText = BUYEMALL_MAX
     
 
     -- Replace the SplitStack callback and  for each merchant item button
@@ -125,7 +125,7 @@ function BuyEmAll_ChooseAmount()
     this.moneyMax = floor(GetMoney() / price) * quantity
     this.available = numAvailable
     local maxPurchase = min(this.bagMax, this.moneyMax)
-    if numAvailable > 0 then maxPurchase = min(maxPurchase, numAvailable * quantity) end
+    if numAvailable ~= -1 then maxPurchase = min(maxPurchase, numAvailable * quantity) end
     this.defaultStack = specialMax > 0 and specialMax <= maxPurchase and specialMax or quantity
     
     if not name or maxPurchase == 0 then
@@ -193,17 +193,18 @@ end
 
 
 
-function BuyEmAll_SplitStack(button, amount)
+function BuyEmAll_SplitStack(amount)
+    local button = BuyEmAllFrame.owner
     if (amount > 0) then
         amount = ceil(amount/button.presetStack) * button.presetStack
-        local params = { button = button, amount = amount }
         if amount > button.stackSize and amount > button.defaultStack then
             local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, button.itemName)
-            dialog.data = params
+            dialog.data = amount
         elseif button.presetStack > 1 then
-            BuyEmAll_OnAccept(params)
+            BuyEmAll_OnAccept(amount)
         else
             BuyMerchantItem(button:GetID(), amount);
+            BuyEmAllFrame:Hide()
         end
     end
 end
@@ -211,24 +212,27 @@ end
 
 
 
-function BuyEmAll_OnAccept(params)
+function BuyEmAll_OnAccept(amount)
+    BuyEmAllFrame:Hide()
+    
+    local button = BuyEmAllFrame.owner
     local numLoops, purchAmount, leftover
     
-    if params.button.presetStack > 1 then
-        numLoops = params.amount/params.button.presetStack
+    if button.presetStack > 1 then
+        numLoops = amount/button.presetStack
         purchAmount = 1
         leftover = 0
     else
-        numLoops = floor(params.amount/params.button.stackSize)
-        purchAmount = params.button.stackSize
-        leftover = mod(params.amount, params.button.stackSize)
+        numLoops = floor(amount/button.stackSize)
+        purchAmount = button.stackSize
+        leftover = mod(amount, button.stackSize)
     end
     
     for i = 1, numLoops do
-        BuyMerchantItem(params.button:GetID(), purchAmount)
+        BuyMerchantItem(button:GetID(), purchAmount)
     end
     
-    if leftover > 0 then BuyMerchantItem(params.button:GetID(), leftover) end
+    if leftover > 0 then BuyMerchantItem(button:GetID(), leftover) end
 end
 
 
@@ -250,23 +254,28 @@ function BuyEmAll_UpdateCost(amount)
     local cost = purchase * button.price
     
     MoneyFrame_Update("BuyEmAllCostMoney", cost)
-    --BuyEmAllCostText:SetMoney(cost)
 end
 
 
 
 
 function BuyEmAllStack_Click()
-    BuyEmAllFrame.split = BuyEmAllFrame.owner.stackSize
-    BuyEmAllOkay_Click()
+    BuyEmAll_ConfirmPurchase(BuyEmAllFrame.owner.stackSize)
 end
 
 
 
 
 function BuyEmAllMax_Click()
-    BuyEmAllFrame.split = BuyEmAllFrame.maxStack
-    BuyEmAllOkay_Click()
+    BuyEmAll_ConfirmPurchase(BuyEmAllFrame.maxStack)
+end
+
+
+
+
+function BuyEmAll_ConfirmPurchase(amount)
+    local dialog = StaticPopup_Show("BUYEMALL_CONFIRM", amount, BuyEmAllFrame.owner.itemName)
+    dialog.data = amount
 end
 
 
@@ -275,8 +284,9 @@ end
 function BuyEmAllStackButton_Enter()
     local amount = BuyEmAllFrame.owner.stackSize
     BuyEmAll_UpdateCost(amount)
+    
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText("Stack Size - |cFFFFFFFF"..amount.."|r")
+    GameTooltip:SetText(BUYEMALL_STACK_SIZE.." - |cFFFFFFFF"..amount.."|r")
 end
 
 
@@ -285,22 +295,26 @@ end
 function BuyEmAllMaxButton_Enter()
     local amount = BuyEmAllFrame.maxStack
     BuyEmAll_UpdateCost(amount)
+    
     GameTooltip:SetOwner(this, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:SetText("Maximum Purchase - |cFFFFFFFF"..amount.."|r")
-    GameTooltip:AddDoubleLine("Free Space:", BuyEmAllFrame.owner.bagMax,1,1,1,1,1,1)
-    GameTooltip:AddDoubleLine("Affordability:", BuyEmAllFrame.owner.moneyMax,1,1,1,1,1,1)
-    if BuyEmAllFrame.owner.available > 0 then
-        GameTooltip:AddDoubleLine("Availability:", BuyEmAllFrame.owner.available,1,1,1,1,1,1)
+    GameTooltip:SetText(BUYEMALL_CAN_BUY.." - |cFFFFFFFF"..amount.."|r")
+    GameTooltip:AddDoubleLine(BUYEMALL_CAN_FIT, BuyEmAllFrame.owner.bagMax,1,1,1,1,1,1)
+    GameTooltip:AddDoubleLine(BUYEMALL_CAN_AFFORD, BuyEmAllFrame.owner.moneyMax,1,1,1,1,1,1)
+    
+    local available = BuyEmAllFrame.owner.available
+    if available == -1 then
+        available = "∞"
     end
+    GameTooltip:AddDoubleLine(BUYEMALL_AVAILABLE, available,1,1,1,1,1,1)
+    
     GameTooltip:Show()
 end
 
 
 
 
-function BuyEmAllMSButton_Leave(amount)
+function BuyEmAllMSButton_Leave()
     BuyEmAll_UpdateCost()
---    this:SetText(this.defaultText)
     GameTooltip:Hide()
 end
 
@@ -469,23 +483,24 @@ end
 
 function BuyEmAllOkay_Click()
 	if ( BuyEmAllFrame.owner ) then
-		BuyEmAllFrame.owner.SplitStack(BuyEmAllFrame.owner, BuyEmAllFrame.split);
+		BuyEmAllFrame.owner.SplitStack(BuyEmAllFrame.split);
 	end
-	BuyEmAllFrame:Hide();
 end
 
 
 
 
 function BuyEmAllCancel_Click()
-	BuyEmAllFrame:Hide();
+	BuyEmAllFrame:Hide()
+    StaticPopup_Hide("BUYEMALL_CONFIRM")
 end
 
 
 
 
 function BuyEmAllFrame_OnHide()
-	if ( BuyEmAllFrame.owner ) then
+	if ( this.owner ) then
 		BuyEmAllFrame.owner.hasBuyEmAll = 0;
 	end
+    StaticPopup_Hide("BUYEMALL_CONFIRM")
 end
