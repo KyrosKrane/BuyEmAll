@@ -462,18 +462,19 @@ function BuyEmAll:UpdateDisplay()
 				purchase = purchase + (self.preset - (purchase % self.preset));
 			end
 		end
+		self.AltNumPurchases = purchase / self.preset; -- Adjustment for not being able to buy less than the preset of items using alternate currency.
 		if ((self.NumAltCurrency == 1) or (self.NumAltCurrency == 2) or (self.NumAltCurrency == 3)) then
-			local cost1 = purchase * self.price1;
+			local cost1 = self.AltNumPurchases * self.price1;
 			BuyEmAllCurrencyAmt1:SetText(cost1);
 			BuyEmAllCurrency1:SetTexture(self.AltCurrency1Tex);
 		end
 		if ((self.NumAltCurrency == 2) or (self.NumAltCurrency == 3)) then
-			local cost2 = purchase * self.price2;
+			local cost2 = self.AltNumPurchases * self.price2;
 			BuyEmAllCurrencyAmt2:SetText(cost2);
 			BuyEmAllCurrency2:SetTexture(self.AltCurrency2Tex);
 		end
 		if ((self.NumAltCurrency == 3)) then
-			local cost3 = purchase * self.price3;
+			local cost3 = self.AltNumPurchases * self.price3;
 			BuyEmAllCurrencyAmt3:SetText(cost3);
 			BuyEmAllCurrency3:SetTexture(self.AltCurrency3Tex);
 		end
@@ -487,9 +488,11 @@ function BuyEmAll:UpdateDisplay()
 	if (self.split == self.max) then
 		BuyEmAllRightButton:Disable();
 		BuyEmAllMaxButton:Disable();
-	elseif (self.AltCurrencyMode == false) and (self.split == 1) then
+	end
+	if (self.AltCurrencyMode == false) and (self.split == 1) then
 		BuyEmAllLeftButton:Disable();
-	elseif (self.AltCurrencyMode == true) and (self.split == self.preset) then
+	end
+	if (self.AltCurrencyMode == true) and (self.split == self.preset) then
 		BuyEmAllLeftButton:Disable();
 	end
 	

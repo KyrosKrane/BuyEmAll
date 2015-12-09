@@ -1,4 +1,8 @@
-﻿v3.2.2
+﻿v3.2.3
+Fixed an issue where there was a chance of the number of items to purchase going below 1 into negative numbers.
+Changed how the price is calculated for alternate currency items to be correct.
+
+v3.2.2
 Super derp on my part, turns out there was a problem with how the addon passed arguments to regular functions, fixed that.
 Minor adjustments to follow Blizzard's 1/nil/0 -> true/false changes.
 Added new WoD currencies.
