@@ -1,4 +1,9 @@
-﻿v3.2.3
+﻿v3.2.4
+Added in reagent bank support.
+Did some reformatting and adjusting of the code, mostly for looks.
+Updated TOC.
+
+v3.2.3
 Fixed an issue where there was a chance of the number of items to purchase going below 1 into negative numbers.
 Changed how the price is calculated for alternate currency items to be correct.
 
