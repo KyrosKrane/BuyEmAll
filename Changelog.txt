@@ -1,4 +1,7 @@
-﻿v3.1.4
+﻿v3.1.5
+No known issues, TOC bump.
+
+v3.1.4
 Added Russian translations thanks to OUGHT, with alternates from Amshaegar due to slight differences.
 Updated TOC.
 Added changelog in case anyone was curious, and so the lists online don't get too large.
