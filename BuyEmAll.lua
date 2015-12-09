@@ -89,10 +89,10 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		self.itemName = name
 		self.available = numAvailable
 		
-		local bagMax, specialMax, stack =
+		local bagMax, stack =
 			CogsFreeBagSpace(tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):")))
 		self.stack = stack
-		self.fit = floor(bagMax / quantity) * quantity + specialMax
+		self.fit = floor(bagMax / quantity) * quantity
 		self.afford = floor(GetMoney() / price) * quantity
 		self.max = min(self.fit, self.afford)
 		if numAvailable > -1 then
@@ -105,9 +105,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 			return
 		end
 		
-		specialMax = floor(specialMax / quantity) * quantity
-		self.defaultStack =
-			specialMax > 0 and specialMax <= self.max and specialMax or quantity
+		self.defaultStack = quantity
 		self.split = self.defaultStack
 		
 		self.partialFit = self.fit % stack
@@ -171,16 +169,6 @@ function BuyEmAll:DoPurchase(amount)
 	
 	local numLoops, purchAmount, leftover
 	
-	--[[ if self.preset > 1 then
-		numLoops = amount/self.preset
-		purchAmount = 1
-		leftover = 0
-	else
-		numLoops = floor(amount/self.stack)
-		purchAmount = self.stack
-		leftover = amount % self.stack
-	end
-	]]
 	if amount <= self.stack then
 		purchAmount = amount
 		numLoops = 1
