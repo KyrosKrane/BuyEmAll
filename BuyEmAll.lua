@@ -20,6 +20,15 @@ function BuyEmAll:OnLoad()
 		timeout = 0,
 		hideOnEscape = true,
 	}
+	self.ConfirmNoItemID = 0
+	StaticPopupDialogs["BUYEMALL_CONFIRM2"] = {
+		text = L.CONFIRM,
+		button1 = YES,
+		button2 = NO,
+		OnAccept = function(dialog) BuyMerchantItem(self.ConfirmNoItemID) end,
+		timeout = 0,
+		hideOnEscape = true,
+	}
 	if BEAConfirmToggle == nil then BEAConfirmToggle = 1 end
 	self.OrigMerchantItemButton_OnModifiedClick = MerchantItemButton_OnModifiedClick
 	MerchantItemButton_OnModifiedClick = function(frame, button)
@@ -141,6 +150,13 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 		self.itemName = name
 		self.available = numAvailable
 		
+		-- Bypass for purchasable things without an itemid/itemlink
+		if GetMerchantItemLink(self.itemIndex) == nil then
+			self.ConfirmNoItemID = self.itemIndex
+			local dialog = StaticPopup_Show("BUYEMALL_CONFIRM2", quantity, self.itemName)
+			return
+		end
+		
 		self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"))
 		local bagMax, stack = self:CogsFreeBagSpace(self.itemID)
 		self.stack = stack
@@ -255,6 +271,7 @@ function BuyEmAll:UpdateDisplay()
 	else
 		cost = purchase * self.price
 	end
+	cost = ceil(cost)
 	MoneyFrame_Update("BuyEmAllMoneyFrame", cost)
 	BuyEmAllText:SetText(self.split)
 	
