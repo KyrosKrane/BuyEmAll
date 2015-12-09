@@ -1,13 +1,127 @@
-﻿<!-- BuyEmAll by Cogwheel -->
-
-<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
-    <!--Script file="localization.lua" /-->
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
     <Script file="BuyEmAll.lua" />
-	<Frame name="BuyEmAll">
+	<Frame name="BuyEmAllFrame" frameStrata="HIGH" parent="UIParent" toplevel="true" enableMouse="true" enableKeyboard="true" hidden="true">
+		<Size>
+			<AbsDimension x="172" y="112"/>
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\AddOns\BuyEmAll\StackFrame.tga">
+					<Size>
+						<AbsDimension x="256" y="32"/>
+					</Size>
+					<TexCoords left="0" right="0.671875" top="0" bottom="0.9"/>
+				</Texture>
+				<FontString name="BuyEmAllText" inherits="GameFontHighlight" justifyH="RIGHT">
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset>
+								<AbsDimension x="-50" y="28"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+                <FontString name="BuyEmAllMaxText" inherits="GameFontHighlight">
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="20" y="-55"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="BuyEmAllLeftButton">
+				<Size>
+					<AbsDimension x="16" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="RIGHT" relativePoint="CENTER">
+						<Offset>
+							<AbsDimension x="-59" y="26"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						BuyEmAllLeft_Click();
+					</OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\MoneyFrame\Arrow-Left-Up"/>
+				<PushedTexture file="Interface\MoneyFrame\Arrow-Left-Down"/>
+				<DisabledTexture file="Interface\MoneyFrame\Arrow-Left-Disabled"/>
+			</Button>
+			<Button name="BuyEmAllRightButton">
+				<Size>
+					<AbsDimension x="16" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="LEFT" relativePoint="CENTER">
+						<Offset>
+							<AbsDimension x="64" y="26"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						BuyEmAllRight_Click();
+					</OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\MoneyFrame\Arrow-Right-Up"/>
+				<PushedTexture file="Interface\MoneyFrame\Arrow-Right-Down"/>
+				<DisabledTexture file="Interface\MoneyFrame\Arrow-Right-Disabled"/>
+			</Button>
+			<Button name="BuyEmAllOkayButton" inherits="UIPanelButtonTemplate" text="OKAY">
+				<Size>
+					<AbsDimension x="64" y="24"/>
+				</Size>
+				<Anchors>
+					<Anchor point="RIGHT" relativePoint="BOTTOM">
+						<Offset>
+							<AbsDimension x="-3" y="32"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						BuyEmAllOkay_Click();
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="BuyEmAllCancelButton" inherits="UIPanelButtonTemplate" text="CANCEL">
+				<Size>
+					<AbsDimension x="64" y="24"/>
+				</Size>
+				<Anchors>
+					<Anchor point="LEFT" relativePoint="BOTTOM">
+						<Offset>
+							<AbsDimension x="5" y="32"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						BuyEmAllCancel_Click();
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
 		<Scripts>
-			<OnLoad>
-				BuyEmAll_OnLoad()
-			</OnLoad>
+            <OnLoad>
+                BuyEmAllFrame_OnLoad()
+            </OnLoad>
+			<OnHide>
+				BuyEmAllFrame_OnHide();
+			</OnHide>
+			<OnChar>
+				BuyEmAllFrame_OnChar();
+			</OnChar>
+			<OnKeyDown>
+				BuyEmAllFrame_OnKeyDown();
+			</OnKeyDown>
 		</Scripts>
 	</Frame>
 </Ui>
