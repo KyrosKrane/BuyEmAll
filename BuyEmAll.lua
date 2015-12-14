@@ -13,7 +13,7 @@ BUYEMALL_STACK = L.STACK;
 
 function BuyEmAll:OnLoad()
   -- Set up confirmation dialog.
-  
+
   StaticPopupDialogs["BUYEMALL_CONFIRM"] = {
     preferredIndex = 3,
     text = L.CONFIRM,
@@ -23,19 +23,19 @@ function BuyEmAll:OnLoad()
     timeout = 0,
     hideOnEscape = true,
   };
-  self.ConfirmNoItemID = 0;
+  self.ConfirmNoItemLink = 0;
   StaticPopupDialogs["BUYEMALL_CONFIRM2"] = {
     preferredIndex = 3,
     text = L.CONFIRM,
     button1 = YES,
     button2 = NO,
-    OnAccept = function(dialog) BuyMerchantItem(self.ConfirmNoItemID) end,
+    OnAccept = function(dialog) BuyMerchantItem(self.ConfirmNoItemLink) end,
     timeout = 0,
     hideOnEscape = true,
   };
 
   -- Clear textures and text to prevent pink textures.
-  
+
   BuyEmAllCurrency1:SetTexture();
   BuyEmAllCurrency2:SetTexture();
   BuyEmAllCurrency3:SetTexture();
@@ -149,7 +149,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 
   -- Don't think this is needed anymore.
   --if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()));
-  
+
   if MerchantFrame.selectedTab == 1
     and IsShiftKeyDown()
     and not IsControlKeyDown()
@@ -166,15 +166,32 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
     self.itemName = name;
     self.available = numAvailable;
 
-    -- Bypass for purchasable things without an itemid/itemlink, don't know any other way right now.
-    
-    if GetMerchantItemLink(self.itemIndex) == nil then
-      self.ConfirmNoItemID = self.itemIndex;
+	self.itemLink = GetMerchantItemLink(self.itemIndex);
+	
+    -- Bypass for purchasable things without an itemlink, don't know any other way right now.
+
+    if self.itemLink == nil then
+      self.ConfirmNoItemLink = self.itemIndex;
       local dialog = StaticPopup_Show("BUYEMALL_CONFIRM2", quantity, self.itemName);
       return
     end
 
-    self.itemID = tonumber(strmatch(GetMerchantItemLink(self.itemIndex), "item:(%d+):"));
+    -- Buying a currency with a currency! At least what it should be. Don't know if there are any items that are used to purchase currency.
+
+    if tonumber(strmatch(self.itemLink, "item:(%d+):")) == nil then
+      local CurrencyTex = select(2,GetMerchantItemInfo(self.itemIndex));
+      local CurrencyID = self:AltCurrencyTranslating(CurrencyTex);
+      self.fit = select(6,GetCurrencyInfo(CurrencyID));
+	  print("self.fit is: " .. self.fit .. ".");
+      if self.fit == 0 then
+        self.fit = 10000000; -- 0 meaning no set maximum, so set how much one can fit super high.
+      end
+      self.stack = 1;
+      self:AltCurrencyHandling(self.itemIndex, frame);
+	  return
+    end
+	
+    self.itemID = tonumber(strmatch(self.itemLink, "item:(%d+):"));
     local bagMax, stack = self:CogsFreeBagSpace(self.itemID);
     self.stack = stack;
     self.fit = bagMax;
@@ -191,7 +208,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
 
     -- Modified to check for free items. Mostly for the PTR/Beta servers, but it shouldn't hurt to leave it in.
     -- Put after the alternate currency trigger to prevent issues. Always had it here, just adding the note.
-    
+
     if self.price == 0 then
       self.afford = self.fit;
     else
@@ -216,7 +233,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
     self:SetStackClick();
 
     -- Misc variables for help with error logs.
-    
+
     self.NPCName = UnitName("npc");
     self.ItemName = select(1,GetMerchantItemInfo(self.itemIndex));
 
@@ -242,8 +259,11 @@ function BuyEmAll:ReagentBankSearcher(RBNumSlots, itemID)
 end
 
 --[[ Processor for Alternate Currencies. Yeah, it's huge, as far as I can tell
+
 it's as small as I can get it while also including every possibility, but I
+
 still want to see if I can make it smaller.
+
 ]]
 
 function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
@@ -254,7 +274,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
 
   self.AltCurrency1Type, self.AltCurrency2Type, self.AltCurrency3Type = 0, 0, 0;
   self.AltCurrency1, self.AltCurrency2, self.AltCurrency3 = 0, 0, 0;
-  local Afford1, Afford2, Afford3 = 999999, 999999, 999999;
+  local Afford1, Afford2, Afford3 = 999999, 999999, 999999;  -- Set them all to a high number to begin with. For later.
 
   local NumAltCurrency = GetMerchantItemCostInfo(itemIndex);
   local RBNumSlots = GetContainerNumSlots(REAGENTBANK_CONTAINER);
@@ -272,7 +292,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
       self.AltCurrency1Type = 1; -- Currency is an item/something that can be in bags.
       self.AltCurrency1 = tonumber(strmatch(select(3,GetMerchantItemCostItem(itemIndex, 1)), "item:(%d+):")); -- Grabs the item's ID.
       self.AltCurrency1Tex = select(10, GetItemInfo(self.AltCurrency1)); -- Gets the texture for the item to show in the BEA frame.
-      price1 = select(2,GetMerchantItemCostItem(itemIndex, 1)); -- Gets the price of the item being purchased.
+      price1 = select(2,GetMerchantItemCostItem(itemIndex, 1)); -- Gets the number of the item required.
       local AC1RBAmt = self:ReagentBankSearcher(RBNumSlots, self.AltCurrency1); -- Checks the reagent bank for the currency item.
       Afford1 = floor((GetItemCount(self.AltCurrency1) + AC1RBAmt) / price1) * self.preset; -- How much can be bought.
     end
@@ -314,7 +334,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
   self.price2 = price2;
   self.price3 = price3;
 
-  self.afford = min(Afford1, Afford2, Afford3);
+  self.afford = min(Afford1, Afford2, Afford3); -- Used Min so if there's not 3 currencies, the unused Affords will be really high and not be used.
 
   self.max = min(self.fit, self.afford);
 
@@ -336,7 +356,7 @@ function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
   self:SetStackClick();
 
   -- Misc variables for help with error logs.
-  
+
   self.NPCName = UnitName("npc");
   self.ItemName = select(1,GetMerchantItemInfo(self.itemIndex));
 
@@ -410,8 +430,11 @@ end
 
 
 --[[
+
 If the amount is more than stack and defaultStack, show a confirmation.
+
 Otherwise, do the purchase.
+
 ]]
 
 function BuyEmAll:VerifyPurchase(amount)
@@ -461,8 +484,11 @@ end
 
 
 --[[
+
 Changes the money display to however much amount of the item will cost. If
+
 amount is not specified, it uses the current split value.
+
 ]]
 
 function BuyEmAll:UpdateDisplay()
@@ -595,8 +621,11 @@ end
 
 
 --[[
+
 Allows you to type a number to buy. This is adapted directly from the Default
+
 UI's code.
+
 ]]
 
 function BuyEmAll:OnChar(text)
@@ -658,8 +687,11 @@ end
 
 
 --[[
+
 Decreases the amount by however much is necessary to go down to the next
+
 lowest multiple of the preset stack size.
+
 ]]
 
 function BuyEmAll:Left_Click()
@@ -674,8 +706,11 @@ end
 
 
 --[[
+
 Increases the amount by however much is necessary to go up to the next highest
+
 multiple of the preset stack size.
+
 ]]
 
 function BuyEmAll:Right_Click()
@@ -729,8 +764,11 @@ end
 
 
 --[[
+
 Creates the tooltip from the given lines table. See the structure of lines above for
+
 more insight.
+
 ]]
 
 function BuyEmAll:CreateTooltip(frame, lines)
@@ -756,7 +794,7 @@ end
 
 function BuyEmAll:OnLeave()
   GameTooltip:Hide();
-  
+
 --GameTooltip_ClearMoney(GameTooltip);
 -- Not needed because of previous commenting out.
 
@@ -764,8 +802,11 @@ end
 
 
 --[[
+
 When the BuyEmAll frame is closed, close any confirmations waiting for a
+
 response as well as clear the currencies.
+
 ]]
 
 function BuyEmAll:OnHide()

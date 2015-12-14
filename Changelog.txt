@@ -1,4 +1,8 @@
-﻿v3.2.5
+﻿v3.2.6
+Fixed purchasing currencies with currencies. Hopefully at least.
+Minor adjustments, tiny bit of prep for a possible future improvement.
+
+v3.2.5
 Updated TOC.
 
 v3.2.4
