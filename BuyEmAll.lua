@@ -151,12 +151,16 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
     -- Don't think this is needed anymore.
     --if ChatFrame1EditBox:HasFocus() then ChatFrame1EditBox:Insert(GetMerchantItemLink(frame:GetID()));
 
+
     if MerchantFrame.selectedTab == 1
             and IsShiftKeyDown()
             and not IsControlKeyDown()
             and not ChatFrame1EditBox:HasFocus() then
 
         -- Set up various data before showing the BuyEmAll frame.
+
+        -- Misc variables for help with error logs.
+        self.NPCName = UnitName("npc");
 
         self.AltCurrencyMode = false;
 
@@ -183,7 +187,6 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
             local CurrencyTex = select(2, GetMerchantItemInfo(self.itemIndex));
             local CurrencyID = self:AltCurrencyTranslating(CurrencyTex);
             self.fit = select(6, GetCurrencyInfo(CurrencyID));
-            print("self.fit is: " .. self.fit .. ".");
             if self.fit == 0 then
                 self.fit = 10000000; -- 0 meaning no set maximum, so set how much one can fit super high.
             end
@@ -233,10 +236,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
         self.partialFit = self.fit % stack;
         self:SetStackClick();
 
-        -- Misc variables for help with error logs.
 
-        self.NPCName = UnitName("npc");
-        self.ItemName = select(1, GetMerchantItemInfo(self.itemIndex));
 
         self:Show(frame);
     else
@@ -259,7 +259,7 @@ function BuyEmAll:ReagentBankSearcher(RBNumSlots, itemID)
     return RBItemAmt;
 end
 
---[[ Processor for Alternate Currencies. Yeah, it's huge, as far as I can tell it's as small as I can get it while also 
+--[[ Processor for Alternate Currencies. Yeah, it's huge, as far as I can tell it's as small as I can get it while also
 including every possibility, but I still want to see if I can make it smaller. ]]
 
 function BuyEmAll:AltCurrencyHandling(itemIndex, frame)
@@ -394,6 +394,8 @@ function BuyEmAll:AltCurrencyTranslating(Texture)
         return 697;
     elseif (strmatch(Texture, "%a+_%d+$") == "coin_18") then
         return 738;
+    elseif (strmatch(Texture, "%a+$") == "mogucoin") then
+        return 752;
     elseif (strmatch(Texture, "%a+$") == "timelesscoin") then
         return 777;
     elseif (strmatch(Texture, "%a+-%a+$") == "timelesscoin-bloody") then
@@ -443,6 +445,31 @@ function BuyEmAll:VerifyPurchase(amount)
     end
 end
 
+-- This code is from Treeston on the MMO-Champion forums, and modified to suit my needs. Link: https://is.gd/25JTV1
+
+local framePurchAmount, frameNumLoops, frameLeftover = 0, 0, 0; -- Have to use locals because the whole self bit doesn't work in this function. Fun fact, that still goes over my head. ;.;
+local frameItemIndex;
+
+local PurchaseLoopFrame = CreateFrame("Frame");
+function BuyEmAll:onUpdate(sinceLastUpdate)
+    self.sinceLastUpdate = (self.sinceLastUpdate or 0) + sinceLastUpdate;
+    if (frameNumLoops == 0) and (frameLeftover == 0) then
+        PurchaseLoopFrame:SetScript("OnUpdate", nil); -- When purchasing is done, clear the script so it's not running constantly.
+        return
+    end
+    if (self.sinceLastUpdate >= 0.5) then -- In seconds, this being half a second.
+    if (frameNumLoops == 0) and (frameLeftover ~= 0) then
+        BuyMerchantItem(frameItemIndex, frameLeftover);
+        frameLeftover = 0;
+    else
+        BuyMerchantItem(frameItemIndex, framePurchAmount);
+        frameNumLoops = frameNumLoops - 1;
+    end
+    self.sinceLastUpdate = 0;
+    end
+end
+
+-- End of code from Treeston.
 
 -- Makes the actual purchase(s)
 function BuyEmAll:DoPurchase(amount)
@@ -465,11 +492,16 @@ function BuyEmAll:DoPurchase(amount)
         end
     end
 
-    for i = 1, numLoops do
-        BuyMerchantItem(self.itemIndex, purchAmount);
+    framePurchAmount = purchAmount;
+    frameNumLoops = numLoops;
+    if leftover == 0 then
+        frameLeftover = 0;
+    else
+        frameLeftover = leftover;
     end
+    frameItemIndex = self.itemIndex;
 
-    if leftover > 0 then BuyMerchantItem(self.itemIndex, leftover) end
+    PurchaseLoopFrame:SetScript("OnUpdate", BuyEmAll.onUpdate);
 end
 
 
@@ -576,7 +608,7 @@ end
 
 function BuyEmAll:OnClick(frame, button)
     if frame == BuyEmAllOkayButton then
-        amount = tonumber(BuyEmAllText:GetText());
+        local amount = tonumber(BuyEmAllText:GetText());
         self:VerifyPurchase(amount);
     elseif frame == BuyEmAllCancelButton then
         BuyEmAllFrame:Hide();
