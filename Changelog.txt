@@ -1,4 +1,7 @@
-﻿v3.2.6
+﻿v3.2.7
+Added Mogu runes support. Now should fix purchasing currencies with currencies.
+
+v3.2.6
 Fixed purchasing currencies with currencies. Hopefully at least.
 Minor adjustments, tiny bit of prep for a possible future improvement.
 
