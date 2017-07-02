@@ -1,4 +1,7 @@
-﻿v3.4.0
+﻿v3.4.1
+Fixed purchases with gold because I missed a function return change.
+
+v3.4.0
 Formatted parts for easier readablity, for me at least.
 Rewrote the alternate currency handler to be more adaptive.
 Thanks to a recent (7.2.5) change, removed my clunky alternate currency ID function.

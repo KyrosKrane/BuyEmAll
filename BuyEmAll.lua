@@ -199,7 +199,7 @@ function BuyEmAll:MerchantItemButton_OnModifiedClick(frame, button)
         self.stack = stack;
         self.fit = bagMax;
 
-        if (select(7, GetMerchantItemInfo(self.itemIndex)) == true) then
+        if (select(8, GetMerchantItemInfo(self.itemIndex)) == true) then
             self:AltCurrencyHandling(self.itemIndex, frame);
             return
         end
