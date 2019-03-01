@@ -1,4 +1,7 @@
-﻿v3.5.2
+﻿v3.5.3
+Slight fix of said minor fix without breaking functionality.
+
+v3.5.2
 Minor fix for previewing azerite gear in vendors.
 
 v3.5.1
